@@ -1975,60 +1975,53 @@ function saveClientId(){
 }
 
 function driveOAuthPopup(cid, cb){
-  var origin=window.location.origin||'null';
   var redirect='https://giovanna-js.github.io/agente-aba';
   var scope='https://www.googleapis.com/auth/drive.readonly';
-  var state='driveauth_'+Date.now();
   var url='https://accounts.google.com/o/oauth2/v2/auth'
     +'?client_id='+encodeURIComponent(cid)
     +'&redirect_uri='+encodeURIComponent(redirect)
     +'&response_type=token'
     +'&scope='+encodeURIComponent(scope)
-    +'&state='+state;
-  var popup=window.open(url,'driveAuth','width=500,height=640,left=100,top=80');
-  gi('driveResults').innerHTML='<div class="muted" style="padding:16px;text-align:center;font-size:12px"><div class="dots"><span></span><span></span><span></span></div><p style="margin-top:8px">Aguardando autorização na janela do Google...<br><small>Se a janela não abriu, verifique o bloqueador de popups.</small></p></div>';
-  // Poll for token in hash
-  var poll=setInterval(function(){
-    try{
-      if(!popup||popup.closed){
-        clearInterval(poll);
-        gi('driveResults').innerHTML='<div style="color:var(--r);padding:12px;font-size:12px">Janela fechada. Clique em "↻ Sync tudo" para tentar novamente.</div>';
-        return;
-      }
-      var hash=popup.location.hash||'';
-      if(hash.includes('access_token')){
-        clearInterval(poll);
-        popup.close();
-        var params={};
-        hash.slice(1).split('&').forEach(function(p){var kv=p.split('=');params[kv[0]]=decodeURIComponent(kv[1]||'');});
-        _driveToken=params.access_token;
-        _driveExpiry=Date.now()+(parseInt(params.expires_in||3600)-120)*1000;
-        toast('Drive conectado ✓');
-        gi('driveResults').innerHTML='';
-        if(cb)cb();
-      }
-    }catch(e){} // cross-origin, keep polling
-  },500);
-  setTimeout(function(){clearInterval(poll);if(popup&&!popup.closed)popup.close();},120000);
+    +'&prompt=select_account';
+  gi('driveResults').innerHTML='<div style="padding:14px;font-size:12px;line-height:1.8;color:var(--ink2)">'
+    +'<p style="margin-bottom:12px;font-weight:500">Autorizar acesso ao Google Drive</p>'
+    +'<p style="margin-bottom:14px;font-size:11.5px">Clique no botão abaixo. Você será redirecionado ao Google e, após autorizar, voltará automaticamente ao agente e a sincronização iniciará.</p>'
+    +'<a class="btn btn-green btn-sm" href="'+url+'">Autorizar com Google Drive →</a>'
+    +'</div>';
 }
-
 // Check hash on load (if redirect happened in same tab)
 (function(){
   try{
-    if(window.location.hash&&window.location.hash.includes('access_token')){
-      var params={};
-      window.location.hash.slice(1).split('&').forEach(function(p){var kv=p.split('=');params[kv[0]]=decodeURIComponent(kv[1]||'');});
-      if(params.access_token){
-        _driveToken=params.access_token;
-        _driveExpiry=Date.now()+(parseInt(params.expires_in||3600)-120)*1000;
-        history.replaceState(null,'',window.location.pathname+window.location.search);
-        toast('Drive conectado ✓');
-      }
-    }
     var sc=localStorage.getItem('aba_gcid');if(sc)S.driveClientId=sc;
     var sf=localStorage.getItem('aba_drive_folder');if(sf)S.driveRootFolder=sf;
   }catch(e){}
 })();
+
+// Check for OAuth token on page load (after Google redirects back)
+document.addEventListener('DOMContentLoaded',function(){
+  try{
+    if(window.location.hash&&window.location.hash.includes('access_token')){
+      var params={};
+      window.location.hash.slice(1).split('&').forEach(function(p){
+        var kv=p.split('=');if(kv[0])params[kv[0]]=decodeURIComponent(kv[1]||'');
+      });
+      if(params.access_token){
+        _driveToken=params.access_token;
+        _driveExpiry=Date.now()+(parseInt(params.expires_in||3600)-120)*1000;
+        history.replaceState(null,'',window.location.pathname);
+        toast('Drive conectado ✓ Abrindo sincronização...');
+        // Auto-open drive modal and sync
+        setTimeout(function(){
+          gi('driveModal').style.display='flex';
+          var lbl=gi('driveFolderLabel');if(lbl)lbl.textContent='3. Intervenção individual';
+          gi('driveSearch').value='';
+          gi('driveResults').innerHTML='';
+          syncAllClients();
+        },800);
+      }
+    }
+  }catch(e){console.warn('OAuth check error:',e);}
+});
 
 // ── Drive REST API helpers ──────────────────────────────
 function driveGet(url){
