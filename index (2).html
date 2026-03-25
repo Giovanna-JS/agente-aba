@@ -1,0 +1,2280 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ABA Supervisor</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+:root{
+  --bg:#F4F3EF;--surf:#FFF;--surf2:#F9F8F5;
+  --b:#E3E0D8;--b2:#CBC8C0;
+  --ink:#1A1918;--ink2:#524F49;--ink3:#9B9890;--ink4:#C4C1BB;
+  --g:#1A6640;--g2:#EBF4EF;--g3:#B8D9C5;
+  --a:#8A4F08;--a2:#FDF2E4;--a3:#F0C878;
+  --r:#8A1F1F;--r2:#FDEAEA;--r3:#EDAAAA;
+  --bl:#174A82;--bl2:#E8F0FB;--bl3:#AACBF0;
+  --pu:#4A2080;--pu2:#F0EAF8;--pu3:#C8AAEE;
+  --rad:8px;--rad-lg:14px;
+  /* phase colors */
+  --ph-lb:#9B9890;--ph-inter:#174A82;--ph-manut:#1A6640;--ph-gen:#4A2080;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-size:13.5px;line-height:1.55;min-height:100vh}
+
+/* ── LAYOUT ── */
+.shell{display:flex;min-height:100vh}
+@media(max-width:860px){.sb{display:none}}
+
+/* ── SIDEBAR ── */
+.sb{width:240px;min-width:240px;flex-shrink:0;background:var(--ink);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sb-hd{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.08)}
+.logo{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:500;color:#fff}
+.logo em{color:rgba(255,255,255,.3);font-style:normal}
+.logo-s{font-size:9.5px;color:rgba(255,255,255,.25);margin-top:2px;letter-spacing:.8px;text-transform:uppercase}
+.sb-sec{padding:12px 8px 4px}
+.sb-lbl{font-size:9px;font-weight:500;color:rgba(255,255,255,.22);text-transform:uppercase;letter-spacing:1.8px;padding:0 8px;margin-bottom:5px;font-family:'JetBrains Mono',monospace}
+.nb{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:var(--rad);cursor:pointer;color:rgba(255,255,255,.48);font-size:12px;transition:all .12s;border:none;background:none;width:100%;text-align:left;font-family:'Inter',sans-serif}
+.nb svg{width:14px;height:14px;flex-shrink:0;opacity:.65}
+.nb:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.85)}
+.nb.on{background:rgba(255,255,255,.12);color:#fff;font-weight:500}
+.nb.on svg{opacity:1}
+.sb-clients{padding:6px 8px;flex:1;display:flex;flex-direction:column;min-height:0}
+#clist{overflow-y:auto;flex:1}
+.ci{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:var(--rad);cursor:pointer;transition:all .12s;margin-bottom:1px}
+.ci.inativo .cn,.ci.inativo .cd{color:rgba(255,255,255,.28)!important}
+.ci:hover{background:rgba(255,255,255,.06)}.ci.on{background:rgba(255,255,255,.11)}
+.av{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.13);color:rgba(255,255,255,.7);font-size:9.5px;font-weight:600;font-family:'JetBrains Mono',monospace;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cn{font-size:12px;color:rgba(255,255,255,.7)}.cd{font-size:10px;color:rgba(255,255,255,.28);margin-top:1px}
+.sb-ft{padding:12px 16px;border-top:1px solid rgba(255,255,255,.06);font-size:9px;color:rgba(255,255,255,.16);font-family:'JetBrains Mono',monospace;line-height:1.8}
+
+/* ── MAIN ── */
+.main{flex:1;min-width:0;display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:var(--surf);border-bottom:1px solid var(--b);padding:11px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:30}
+.topbar-l{min-width:0}
+.tb-title{font-size:14px;font-weight:600;color:var(--ink);line-height:1.2}
+.tb-sub{font-size:10.5px;color:var(--ink3);margin-top:1px}
+.topbar-r{display:flex;gap:6px;align-items:center;flex-shrink:0}
+.content{flex:1;padding:20px 24px;overflow-y:auto}
+
+/* ── BUTTONS ── */
+.btn{padding:6px 12px;border-radius:var(--rad);font-family:'Inter',sans-serif;font-size:11.5px;font-weight:500;cursor:pointer;transition:all .12s;border:1px solid var(--b);background:var(--surf);color:var(--ink2);white-space:nowrap}
+.btn:hover{background:var(--bg)}.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-dark{background:var(--ink);color:#fff;border-color:var(--ink)}.btn-dark:hover{background:#2a2a2c}
+.btn-green{background:var(--g);color:#fff;border-color:var(--g)}.btn-green:hover{background:#145432}
+.btn-sm{padding:4px 9px;font-size:11px}.btn-xs{padding:2px 7px;font-size:10.5px}
+
+/* ── CARDS ── */
+.card{background:var(--surf);border:1px solid var(--b);border-radius:var(--rad-lg);padding:16px}
+.card-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:13px}
+.card-title{font-size:12.5px;font-weight:600;color:var(--ink)}.card-sub{font-size:10.5px;color:var(--ink3);margin-top:2px}
+
+/* ── GRID ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.flex{display:flex}.aic{align-items:center}.jb{justify-content:space-between}.wrap{flex-wrap:wrap}
+.gap4{gap:4px}.gap6{gap:6px}.gap8{gap:8px}.gap10{gap:10px}.gap12{gap:12px}
+.mb8{margin-bottom:8px}.mb12{margin-bottom:12px}.mb16{margin-bottom:16px}.mb20{margin-bottom:20px}
+.mt6{margin-top:6px}.mt8{margin-top:8px}.mt12{margin-top:12px}
+
+/* ── FORM ── */
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:11px}
+.field label{font-size:9.5px;font-weight:500;color:var(--ink3);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.7px}
+.fi,.fs,.fta{padding:7px 10px;border:1px solid var(--b);border-radius:var(--rad);font-family:'Inter',sans-serif;font-size:12.5px;color:var(--ink);background:var(--surf);outline:none;transition:border-color .12s;width:100%}
+.fi:focus,.fs:focus,.fta:focus{border-color:var(--b2)}.fta{resize:vertical;min-height:64px;line-height:1.6}
+.fhint{font-size:10px;color:var(--ink4);margin-top:2px}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:500;white-space:nowrap}
+.bg-g{background:var(--g2);color:var(--g);border:1px solid var(--g3)}
+.bg-a{background:var(--a2);color:var(--a);border:1px solid var(--a3)}
+.bg-r{background:var(--r2);color:var(--r);border:1px solid var(--r3)}
+.bg-b{background:var(--bl2);color:var(--bl);border:1px solid var(--bl3)}
+.bg-p{background:var(--pu2);color:var(--pu);border:1px solid var(--pu3)}
+.bg-n{background:var(--bg);color:var(--ink2);border:1px solid var(--b)}
+
+/* ── PHASE BADGES ── */
+.ph{display:inline-flex;align-items:center;padding:1px 6px;border-radius:3px;font-size:9.5px;font-weight:600;font-family:'JetBrains Mono',monospace}
+.ph-lb{background:#F1EFE8;color:var(--ph-lb)}.ph-inter{background:var(--bl2);color:var(--ph-inter)}
+.ph-manut{background:var(--g2);color:var(--ph-manut)}.ph-gen{background:var(--pu2);color:var(--ph-gen)}
+
+/* ── DECISION CARDS (briefing view) ── */
+.prog-card{background:var(--surf);border:1px solid var(--b);border-radius:var(--rad-lg);overflow:hidden;transition:box-shadow .15s;cursor:pointer}
+.prog-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.prog-card.urgent{border-left:3px solid var(--r)}
+.prog-card.attention{border-left:3px solid var(--a)}
+.prog-card.ok{border-left:3px solid var(--g)}
+.prog-card.concluded{border-left:3px solid var(--bl)}
+.prog-card-hd{padding:12px 14px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.prog-name{font-size:13px;font-weight:600;color:var(--ink)}
+.prog-alvo{font-size:11px;color:var(--ink3);margin-top:2px}
+.prog-card-body{padding:0 14px 12px;display:flex;align-items:center;gap:12px}
+.prog-card-actions{padding:10px 14px;border-top:1px solid var(--b);display:flex;align-items:center;gap:6px;background:var(--surf2)}
+/* Expanded detail inline */
+.prog-detail{border-top:1px solid var(--b);padding:14px;background:var(--surf)}
+
+/* ── METRICS ── */
+.met{background:var(--surf2);border:1px solid var(--b);border-radius:var(--rad);padding:12px 14px}
+.met-l{font-size:9.5px;color:var(--ink3);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
+.met-v{font-size:22px;font-weight:300;color:var(--ink);line-height:1;font-variant-numeric:tabular-nums}
+.met-s{font-size:10px;color:var(--ink3);margin-top:2px}
+
+/* ── PROGRESS BAR ── */
+.pbar{height:3px;background:var(--b);border-radius:2px;overflow:hidden}
+.pbar-f{height:100%;border-radius:2px;transition:width .4s}
+
+/* ── CHECKLIST ── */
+.ck-item{display:flex;align-items:flex-start;gap:9px;padding:8px 0;border-bottom:1px solid var(--b);cursor:pointer}
+.ck-item:last-child{border-bottom:none}
+.ck-box{width:15px;height:15px;border-radius:3px;border:1.5px solid var(--b2);background:var(--surf);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;transition:all .12s}
+.ck-box.on{background:var(--g);border-color:var(--g)}
+.ck-text{font-size:12px;color:var(--ink);line-height:1.4}
+.ck-item.done .ck-text{color:var(--ink3);text-decoration:line-through}
+
+/* ── NOTES ── */
+.nota{background:var(--surf);border:1px solid var(--b);border-radius:var(--rad);padding:11px 13px;margin-bottom:7px}
+.nota-hd{display:flex;align-items:center;gap:7px;margin-bottom:5px;flex-wrap:wrap}
+.nota-srv{font-size:9.5px;font-weight:600;padding:2px 6px;border-radius:3px;font-family:'JetBrains Mono',monospace}
+.srv-aba{background:var(--g2);color:var(--g)}.srv-to{background:var(--bl2);color:var(--bl)}.srv-fono{background:var(--pu2);color:var(--pu)}.srv-x{background:var(--bg);color:var(--ink3)}
+.nota-date{font-size:10px;color:var(--ink3);font-family:'JetBrains Mono',monospace}
+.nota-time{font-size:10px;color:var(--ink4)}
+.nota-txt{font-size:12px;color:var(--ink2);line-height:1.7}
+.nota-absent{font-size:11px;color:var(--r);font-style:italic;margin-top:3px}
+
+/* ── CHAT ── */
+.chat-frame{display:flex;flex-direction:column;height:calc(100vh - 120px)}
+.msgs{flex:1;overflow-y:auto;padding-bottom:12px;display:flex;flex-direction:column;gap:11px}
+.msg{display:flex;gap:8px;max-width:88%}
+.msg.me{align-self:flex-end;flex-direction:row-reverse}
+.msg.ai{align-self:flex-start}
+.mav{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;flex-shrink:0;font-family:'JetBrains Mono',monospace}
+.me .mav{background:var(--ink);color:#fff}.ai .mav{background:var(--g2);color:var(--g);border:1px solid var(--g3)}
+.mbubble{padding:9px 12px;border-radius:var(--rad-lg);font-size:13px;line-height:1.7}
+.me .mbubble{background:var(--ink);color:#fff;border-radius:var(--rad-lg) var(--rad-lg) 4px var(--rad-lg)}
+.ai .mbubble{background:var(--surf);border:1px solid var(--b);border-radius:var(--rad-lg) var(--rad-lg) var(--rad-lg) 4px}
+.chat-bar{display:flex;gap:7px;padding-top:10px;border-top:1px solid var(--b)}
+.chi{flex:1;padding:8px 11px;border:1px solid var(--b);border-radius:var(--rad);font-family:'Inter',sans-serif;font-size:12.5px;color:var(--ink);background:var(--surf);outline:none;resize:none}
+.chi:focus{border-color:var(--b2)}
+
+/* ── FILTER BAR ── */
+.fbar{display:flex;gap:7px;align-items:center;flex-wrap:wrap;padding:10px 13px;background:var(--surf2);border:1px solid var(--b);border-radius:var(--rad);margin-bottom:13px}
+.fbar-sel{padding:4px 8px;border:1px solid var(--b);border-radius:6px;font-size:11px;font-family:'Inter',sans-serif;color:var(--ink2);background:var(--surf);outline:none}
+
+/* ── IOA SCORE ── */
+.ioa-score{font-size:26px;font-weight:300;font-family:'JetBrains Mono',monospace;line-height:1}
+.score-ok{color:var(--g)}.score-warn{color:var(--a)}.score-bad{color:var(--r)}
+.trial-grid{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px}
+.trial-cell{width:26px;height:26px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:600;font-family:'JetBrains Mono',monospace;border:1px solid var(--b)}
+.tc-agree{background:var(--g2);border-color:var(--g3);color:var(--g)}
+.tc-disagree{background:var(--r2);border-color:var(--r3);color:var(--r)}
+
+/* ── MISC ── */
+.divider{height:1px;background:var(--b);margin:14px 0}
+.muted{color:var(--ink3);font-size:11px}
+.mono{font-family:'JetBrains Mono',monospace}
+.sec-title{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:12px}
+.tipo-badge{font-size:9px;padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-weight:500}
+.tipo-pct{background:var(--g2);color:var(--g)}.tipo-ev{background:var(--bl2);color:var(--bl)}
+.tipo-int{background:var(--pu2);color:var(--pu)}.tipo-tx{background:var(--a2);color:var(--a)}
+
+.dots span{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--g);animation:db 1.1s infinite;margin:0 2px}
+.dots span:nth-child(2){animation-delay:.18s}.dots span:nth-child(3){animation-delay:.36s}
+@keyframes db{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-5px)}}
+.toast-el{position:fixed;bottom:16px;right:16px;background:var(--ink);color:#fff;padding:8px 13px;border-radius:var(--rad);font-size:11.5px;z-index:1000;opacity:0;transform:translateY(4px);pointer-events:none;transition:all .2s}
+.toast-el.show{opacity:1;transform:translateY(0)}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--b);border-radius:2px}
+
+/* ── FLOW ── */
+.flow-card{border:1px solid var(--b);border-radius:var(--rad-lg);padding:14px;background:var(--surf)}
+.flow-card.active{border-color:var(--ink)}
+.flow-card.ans-y{border-color:var(--g3);background:var(--g2);opacity:.7}
+.flow-card.ans-n{opacity:.58}
+.flow-card.term{border-width:2px}
+.t-g{border-color:var(--g);background:var(--g2)}.t-a{border-color:var(--a);background:var(--a2)}
+.t-r{border-color:var(--r);background:var(--r2)}.t-b{border-color:var(--bl);background:var(--bl2)}
+.flow-conn{display:flex;align-items:center;padding:2px 0 2px 18px;gap:5px;font-size:9.5px;color:var(--ink4);font-family:'JetBrains Mono',monospace}
+.flow-conn::before{content:'';display:block;width:1px;height:14px;background:var(--b);flex-shrink:0}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside class="sb">
+  <div class="sb-hd">
+    <div class="logo">ABA<em>.</em>Supervisor</div>
+    <div class="logo-s">Análise Clínica · BCBA</div>
+  </div>
+  <div class="sb-sec">
+    <div class="sb-lbl">Módulos</div>
+    <button class="nb on" onclick="goV('painel')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 9h5V2H2zM9 2v4h5V2zM9 9h5v5H9zM2 14h5v-3H2z"/></svg>Painel - Briefing
+    </button>
+    <button class="nb" onclick="goV('notas')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="1.5"/><path d="M5 6h6M5 8.5h6M5 11h3"/></svg>Notas de Sessão
+    </button>
+    
+    <button class="nb" onclick="goV('supervisao')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3H4a1 1 0 00-1 1v9a1 1 0 001 1h8a1 1 0 001-1V4a1 1 0 00-1-1h-2M6 3a1 1 0 011-1h2a1 1 0 011 1M6 3h4"/><path d="M5 8.5l2 2 4-4"/></svg>Checklist Supervisão
+    </button>
+    <button class="nb" onclick="goV('relatorio')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 1H4a1 1 0 00-1 1v12a1 1 0 001 1h8a1 1 0 001-1V4L10 1z"/><path d="M10 1v3h3M5 7h6M5 9.5h6M5 12h4"/></svg>Relatório / PTI
+    </button>
+    <button class="nb" onclick="goV('pais')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 7a3 3 0 10-6 0 3 3 0 006 0zM2 14c0-3 2-4.5 6-4.5S14 11 14 14"/><path d="M12 5a2 2 0 110 4"/><path d="M14 13c0-2-.8-3.5-2-4"/></svg>
+      Para os Pais
+    </button>
+        <button class="nb" onclick="goV('ia')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M6 6c0-1.1.9-2 2-2s2 .9 2 2c0 .9-.6 1.7-1.5 1.9L8 10"/><circle cx="8" cy="12.5" r=".5" fill="currentColor" stroke="none"/></svg>Assistente
+    </button>
+  </div>
+  <div class="sb-clients">
+    <div class="sb-lbl" style="padding:0 8px;margin-bottom:6px">Clientes</div>
+    <!-- Search input -->
+    <div style="position:relative;margin-bottom:6px">
+      <input id="clientSearch" type="text" placeholder="Buscar cliente..." autocomplete="off"
+        style="width:100%;padding:6px 28px 6px 9px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:rgba(255,255,255,.07);color:rgba(255,255,255,.8);font-size:11.5px;font-family:Inter,sans-serif;outline:none"
+        oninput="filterClients(this.value)" onfocus="this.style.borderColor='rgba(255,255,255,.3)'" onblur="this.style.borderColor='rgba(255,255,255,.15)'">
+      <span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.3);font-size:11px;pointer-events:none">⌕</span>
+    </div>
+    <div id="clist" style="max-height:calc(100vh - 380px);overflow-y:auto"></div>
+    <button class="btn btn-sm" style="width:100%;margin-top:6px;font-size:10.5px;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:rgba(255,255,255,.6)" onclick="addClient()">+ Novo cliente</button>
+  </div>
+  <div class="sb-ft">Kipfmiller et al. (2019)<br>Wolfe, Barton & Meadan (2019)<br>Cooper, Heron & Heward (2019)</div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-l">
+      <div class="tb-title" id="tb-title">Painel - Briefing</div>
+      <div class="tb-sub" id="tb-sub">Prioridade por urgência clínica</div>
+    </div>
+    <div class="topbar-r">
+      <span id="tb-client" class="muted mono" style="font-size:10px"></span>
+      <button class="btn btn-sm" onclick="exportCSV()">↓ CSV</button>
+      <button class="btn btn-sm" style="color:var(--r);border-color:var(--r3)" onclick="clearData()">✕ Limpar dados</button>
+      <button class="btn btn-green btn-sm" onclick="gi('xlsxIn').click()">↑ Importar XLSX</button>
+      <input type="file" id="xlsxIn" accept=".xlsx,.xls" style="display:none" onchange="importXLSX(this)">
+      <button class="btn btn-sm" onclick="openDriveSync()" title="Sincronizar com Google Drive" style="padding:5px 9px" id="driveBtnTop">&#9729; Drive</button>
+    </div>
+  </div>
+  <div class="content" id="content"></div>
+</div>
+</div>
+
+<div class="toast-el" id="toast"></div>
+<div id="clientModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;align-items:center;justify-content:center">
+  <div style="background:var(--surf);border-radius:var(--rad-lg);padding:24px;min-width:300px;max-width:380px;width:90%">
+    <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:16px" id="clientModalTitle">Novo cliente</div>
+    <div class="field"><label>Sigla / código</label><input class="fi" id="cmCode" placeholder="Ex: M.C.J.L." onkeydown="clientModalKey(event)"></div>
+    <div class="field"><label>Diagnóstico</label><input class="fi" id="cmDiag" placeholder="Ex: TEA, TDAH..." onkeydown="clientModalKey(event)"></div>
+    <div class="flex gap8" style="margin-top:4px">
+      <button class="btn btn-dark btn-sm" style="flex:1" onclick="submitClientModal()">Salvar</button>
+      <button class="btn btn-sm" style="flex:1" onclick="gi('clientModal').style.display='none'">Cancelar</button>
+    </div>
+  </div>
+</div>
+<div id="driveModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center">
+  <div style="background:var(--surf);border-radius:var(--rad-lg);padding:22px 24px;min-width:400px;max-width:560px;width:92%;max-height:90vh;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-shrink:0">
+      <div style="font-size:13px;font-weight:600;color:var(--ink)">&#9729; Google Drive</div>
+      <div class="flex gap6">
+        <button class="btn btn-xs" onclick="openDriveConfig()" title="Configurar pasta raiz">⚙ Config</button>
+        <button class="btn btn-xs" onclick="gi('driveModal').style.display='none'">×</button>
+      </div>
+    </div>
+    <!-- Sync all button -->
+    <div style="margin-bottom:10px;padding:10px;background:var(--surf2);border-radius:var(--rad);border:1px solid var(--b);flex-shrink:0">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <div>
+          <div style="font-size:12px;font-weight:500;color:var(--ink)">Sincronizar todos os clientes</div>
+          <div class="muted" style="font-size:10.5px">Busca automaticamente em "<span id="driveFolderLabel">Intervenção Individual</span>"</div>
+        </div>
+        <button class="btn btn-green btn-sm" onclick="syncAllClients()" style="flex-shrink:0">↻ Sync tudo</button>
+      </div>
+    </div>
+    <!-- Individual search -->
+    <div class="field mb8" style="flex-shrink:0">
+      <label>Ou buscar um cliente específico</label>
+      <div class="flex gap6">
+        <input class="fi" id="driveSearch" placeholder="Sigla ou nome do cliente" style="flex:1;font-size:12px">
+        <button class="btn btn-sm" onclick="searchDrive()">Buscar</button>
+      </div>
+    </div>
+    <div id="driveResults" style="flex:1;overflow-y:auto;min-height:80px;max-height:320px"></div>
+    <div id="driveStatus" class="muted" style="font-size:11px;flex-shrink:0"></div>
+  </div>
+</div>
+<div id="importModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center">
+  <div style="background:var(--surf);border-radius:var(--rad-lg);padding:28px 32px;min-width:280px;text-align:center">
+    <div class="dots" style="margin-bottom:12px"><span></span><span></span><span></span></div>
+    <div id="importMsg" style="font-size:12.5px;color:var(--ink2)">Lendo arquivo...</div>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+'use strict';
+// ══════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════
+var gi=function(id){return document.getElementById(id);};
+function toast(msg,dur){var el=gi('toast');el.textContent=msg;el.classList.add('show');setTimeout(function(){el.classList.remove('show');},dur||2400);}
+function sortKey(d){if(!d)return 0;try{var p=d.split('/');return parseInt(p[2]||0)*10000+parseInt(p[1]||0)*100+parseInt(p[0]||0);}catch(e){return 0;}}
+function safeN(v){if(v===null||v===undefined||v==='')return null;var n=parseFloat(String(v).replace(',','.'));return isNaN(n)?null:n;}
+function dateStr(v){if(!v)return'';if(v instanceof Date){var d=v;return('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear();}return String(v).trim();}
+function timeStr(v){if(!v)return'';if(v instanceof Date)return('0'+v.getHours()).slice(-2)+'h'+('0'+v.getMinutes()).slice(-2);if(typeof v==='number'){var t=Math.round(v*1440);return Math.floor(t/60)+'h'+('0'+(t%60)).slice(-2);}return'';}
+function phaseLabel(et){var e=String(et||'').trim();if(/^LB$/i.test(e))return'LB';if(/^(inter|int|interven)/i.test(e))return'Inter.';if(/^(manut|mant)/i.test(e))return'Manut.';if(/^(gen|gener)/i.test(e))return'Gener.';return e||'?';}
+function phaseClass(ph){var m={LB:'ph-lb','Inter.':'ph-inter','Manut.':'ph-manut','Gener.':'ph-gen'};return m[ph]||'ph-lb';}
+function phaseBadge(ph){return'<span class="ph '+phaseClass(ph)+'">'+ph+'</span>';}
+function tipoBadge(tipo){var m={'Porcentagem':'tipo-pct','Evento DTT':'tipo-ev','Intervalo':'tipo-int','Taxa':'tipo-tx','Frequência':'tipo-tx','Automonitoramento':'tipo-int','Assentimento':'tipo-pct'};return'<span class="tipo-badge '+(m[tipo]||'')+'">'+tipo+'</span>';}
+function srvClass(srv){var s=String(srv||'').toUpperCase();if(s.includes('ABA'))return'srv-aba';if(s.includes('TO'))return'srv-to';if(s.includes('FONO'))return'srv-fono';return'srv-x';}
+function esc(s){return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
+
+// ══════════════════════════════════════════════════════
+// PHASES + DECISION ENGINE
+// ══════════════════════════════════════════════════════
+// A program has sessions with phases. Decision applies to the CURRENT phase window.
+function currentPhase(sess){if(!sess||!sess.length)return'?';return sess[sess.length-1].et||'?';}
+
+function sessInCurrentPhase(sess){
+  // Find the last phase change and return sessions from that point
+  if(!sess||!sess.length)return[];
+  var lastPh=sess[sess.length-1].et;
+  var start=sess.length-1;
+  for(var i=sess.length-2;i>=0;i--){if(sess[i].et!==lastPh){start=i+1;break;}if(i===0)start=0;}
+  return sess.slice(start);
+}
+
+function phaseSections(sess){
+  // Returns array of {phase, sessions[]} for drawing phase lines
+  if(!sess||!sess.length)return[];
+  var sections=[];var cur={phase:sess[0].et,sessions:[sess[0]]};
+  for(var i=1;i<sess.length;i++){
+    if(sess[i].et===cur.phase){cur.sessions.push(sess[i]);}
+    else{sections.push(cur);cur={phase:sess[i].et,sessions:[sess[i]]};}
+  }
+  sections.push(cur);return sections;
+}
+
+var FLOW_STEPS=[
+  {id:'trend_up',  q:'Na fase atual, os dados têm tendência ascendente?',desc:'Avalie apenas as sessões da fase atual ('+phaseLabel('Inter.')+', Manut. etc.), não toda a série.',yes:'last3_crit',no:'trend_down'},
+  {id:'last3_crit',q:'Os últimos 3 pontos estão no critério ou acima?',desc:'3 pontos consecutivos ≥ critério = masterização da fase atual.',yes:'CONCLUIDO',no:'MANTER'},
+  {id:'trend_down',q:'Na fase atual, os dados têm tendência descendente?',desc:'Queda consistente na fase atual = problema de implementação ou procedimento inadequado.',yes:'MODIFICAR',no:'variable'},
+  {id:'variable',  q:'Os dados são muito variáveis (amplitude > 25%)?',desc:'Alta variabilidade dificulta detecção de tendência - pode indicar inconsistência na aplicação.',yes:'MODIFICAR',no:'flat'},
+  {id:'flat',      q:'Os dados estão planos (sem progressso)?',desc:'Estagnação após sessões suficientes = intervenção não está produzindo aprendizagem.',yes:'last10_50',no:'MANTER'},
+  {id:'last10_50', q:'A média das últimas sessões está em 50% ou abaixo?',desc:'Desempenho cronicamente baixo = ausência de efeito da intervenção nessa fase.',yes:'DESCONTINUAR',no:'MODIFICAR'},
+];
+var TERMS={
+  MANTER:      {label:'Manter',         cls:'t-g',bc:'bg-g',icon:'↗',color:'var(--g)', desc:'Intervenção produzindo progresso na fase atual. Continuar e monitorar.'},
+  MODIFICAR:   {label:'Modificar',      cls:'t-a',bc:'bg-a',icon:'↻',color:'var(--a)', desc:'Ajustar procedimento, SD, reforçadores, densidade de reforço, nível de ajuda ou ambiente.'},
+  DESCONTINUAR:{label:'Descontinuar',   cls:'t-r',bc:'bg-r',icon:'⊘',color:'var(--r)', desc:'Sem efeito após período prolongado. Reavaliar objetivo, método e adequação da fase.'},
+  CONCLUIDO:   {label:'Concluído',      cls:'t-b',bc:'bg-b',icon:'✓',color:'var(--bl)',desc:'Critério atingido na fase atual. Avançar fase (Manut./Gener.) ou encerrar programa.'},
+};
+
+function autoDecide(sess,crit){
+  // Decide based on CURRENT PHASE sessions only
+  var cur=sessInCurrentPhase(sess);
+  var vals=cur.map(function(s){return s.v;});
+  crit=crit||80;
+  if(vals.length<3)return null;
+  var n=vals.length,slope=(vals[n-1]-vals[0])/(n-1||1);
+  var last3=vals.slice(-3),last10=vals.slice(-10);
+  var avg10=last10.reduce(function(a,b){return a+b;},0)/last10.length;
+  var range=Math.max.apply(null,vals)-Math.min.apply(null,vals);
+  if(slope>1.5&&last3.every(function(x){return x>=crit;}))return'CONCLUIDO';
+  if(slope>1.5)return'MANTER';
+  if(slope<-1.5)return'MODIFICAR';
+  if(range>25)return'MODIFICAR';
+  if(Math.abs(slope)<1)return avg10<=50?'DESCONTINUAR':'MODIFICAR';
+  return'MANTER';
+}
+
+function urgencyLevel(dec,phase){
+  if(dec==='DESCONTINUAR')return 0; // most urgent
+  if(dec==='MODIFICAR')return 1;
+  if(dec===null)return 2; // not enough data
+  if(dec==='MANTER')return 3;
+  if(dec==='CONCLUIDO')return 4;
+  return 5;
+}
+
+function urgencyCard(dec){
+  if(dec==='DESCONTINUAR')return'urgent';
+  if(dec==='MODIFICAR')return'attention';
+  if(dec==='CONCLUIDO')return'concluded';
+  if(dec==='MANTER')return'ok';
+  return'';
+}
+
+function trendInfo(vals){
+  if(!vals||vals.length<2)return{lbl:'-',bc:'bg-n'};
+  var slope=(vals[vals.length-1]-vals[0])/(vals.length-1);
+  var range=Math.max.apply(null,vals)-Math.min.apply(null,vals);
+  if(slope>1.5)return{lbl:'↗ Ascendente',bc:'bg-g'};
+  if(slope<-1.5)return{lbl:'↘ Descendente',bc:'bg-r'};
+  if(range>25)return{lbl:'↕ Variável',bc:'bg-a'};
+  return{lbl:'→ Plana',bc:'bg-n'};
+}
+
+// ══════════════════════════════════════════════════════
+// XLSX PARSER
+// ══════════════════════════════════════════════════════
+function importXLSX(input){
+  var file=input.files[0];if(!file)return;input.value='';
+  var ov=gi('importModal');ov.style.display='flex';gi('importMsg').textContent='Lendo '+file.name+'...';
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var wb=XLSX.read(e.target.result,{type:'array',cellDates:true});
+      gi('importMsg').textContent='Processando abas...';
+      var res=parseWB(wb,file.name);
+      ov.style.display='none';
+      mergeData(res);
+      S.cid=res.cid;
+      renderSidebar();gi('tb-client').textContent=res.cliente;
+      goV('painel');
+      toast('✓ '+res.programas.length+' programas · '+res.notas.filter(function(n){return n.reg;}).length+' notas',3000);
+    }catch(err){ov.style.display='none';toast('Erro: '+err.message,4000);console.error(err);}
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function mergeData(res){
+  var existing=S.clients.find(function(c){return c.code===res.cliente;});
+  if(existing){
+    existing.notas=res.notas;
+    S.programs=S.programs.filter(function(p){return p.cid!==existing.id;});
+    res.programas.forEach(function(p){p.cid=existing.id;S.programs.push(p);});
+    res.cid=existing.id;
+  }else{
+    var cid=Date.now();res.cid=cid;
+    S.clients.push({id:cid,code:res.cliente,ini:res.cliente.replace(/\./g,'').substring(0,2).toUpperCase(),diag:'',notas:res.notas});
+    res.programas.forEach(function(p){p.cid=cid;S.programs.push(p);});
+  }
+  persist();
+
+}
+
+function findHdrRow(rows,key){
+  for(var i=0;i<Math.min(rows.length,8);i++){if(rows[i]&&rows[i].some(function(c){return c&&String(c).trim()===key;}))return i;}
+  return -1;
+}
+
+function parseWB(wb,filename){
+  var cliente=(filename.match(/([A-Z](?:\.[A-Z])+)/)||['Cliente'])[0];
+  var programas=[];var notas=[];
+  var SKIP=['Graf.','IPIT'];
+  for(var si=0;si<wb.SheetNames.length;si++){
+    var sname=wb.SheetNames[si];
+    if(SKIP.some(function(s){return sname.startsWith(s);}))continue;
+    var ws=wb.Sheets[sname];if(!ws||!ws['!ref'])continue;
+    var rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:false,dateNF:'dd/mm/yyyy'});
+    if(!rows.length)continue;
+    if(sname==='Notas'){parseNotas(rows,notas);}
+    else if(sname==='Porcentagem'){parsePct(rows,programas);}
+    else if(sname==='Evento'){parseEvento(rows,programas);}
+    else if(sname==='Intervalo'){parseIntervalo(rows,programas);}
+    else if(sname==='Taxa'){parseTaxa(rows,programas);}
+    else if(sname==='Mando vocal'){parseMandoVocal(rows,programas);}
+    else if(sname==='Automonitoramento'){parseAutomon(rows,programas);}
+    else if(sname==='Assentimento'){parseAssent(rows,programas);}
+  }
+  return{cliente:cliente,notas:notas,programas:programas};
+}
+
+function parseNotas(rows,out){
+  var start=12;
+  for(var i=0;i<rows.length;i++){if(rows[i]&&rows[i].some(function(c){return c&&String(c).includes('Registro');})){start=i+1;break;}}
+  for(var i=start;i<rows.length;i++){
+    var r=rows[i];if(!r||!r[1])continue;
+    var d=dateStr(r[1]);if(!d)continue;
+    var srv=String(r[2]||'').trim();
+    var pres=String(r[3]||'').trim().toLowerCase();
+    var presTag=pres.includes('falta')?'falta':pres.includes('cancel')?'cancelado':pres.includes('presen')?'presenca':'';
+    out.push({d:d,srv:srv,presTag:presTag,ent:timeStr(r[4]),sai:timeStr(r[5]),reg:String(r[7]||'').trim()});
+  }
+}
+
+function makeProg(prog,alvo,tipo,metrica,crit){return{programa:prog,alvo:alvo,tipo:tipo,metrica:metrica,crit:crit,sess:[],status:'ativo',notes:''};}
+
+function parsePct(rows,out){
+  var hi=findHdrRow(rows,'Data');if(hi<0)return;
+  var hdr=rows[hi].map(function(c){return c?String(c).trim():'';});
+  var iR=hdr.indexOf('Respostas'),iT=hdr.indexOf('Total'),iE=hdr.indexOf('Etapa');
+  var byKey={};
+  for(var i=hi+1;i<rows.length;i++){
+    var r=rows[i];var prog=String(r[2]||'').trim();if(!prog)continue;
+    var alvo=r[3]?String(r[3]).trim():'';
+    var resp=safeN(r[iR]),total=safeN(r[iT]);if(resp===null||!total)continue;
+    var v=Math.round(resp/total*1000)/10;var d=dateStr(r[0]);
+    var et=phaseLabel(r[iE]);var key=prog+'|||'+alvo;
+    if(!byKey[key])byKey[key]=makeProg(prog,alvo,'Porcentagem','% correto',80);
+    byKey[key].sess.push({d:d,v:v,et:et});
+  }
+  Object.values(byKey).forEach(function(p){p.sess.sort(function(a,b){return sortKey(a.d)-sortKey(b.d);});if(p.sess.length)out.push(p);});
+}
+
+function parseEvento(rows,out){
+  var hi=findHdrRow(rows,'Data');if(hi<0)return;
+  var hdr=rows[hi].map(function(c){return c?String(c).trim():'';});
+  var iE=hdr.indexOf('Etapa');
+  var t1=-1;for(var ci=0;ci<hdr.length;ci++){if(hdr[ci]==='1'){t1=ci;break;}}
+  var tCols=[];for(var j=0;j<10;j++)tCols.push(t1>=0?t1+j:6+j);
+  var byKey={};
+  for(var i=hi+1;i<rows.length;i++){
+    var r=rows[i];var prog=String(r[2]||'').trim();if(!prog)continue;
+    var alvo=r[3]?String(r[3]).trim():'';
+    var tents=[];tCols.forEach(function(ci){if(r[ci]&&String(r[ci]).trim())tents.push(String(r[ci]).trim().toUpperCase());});
+    if(!tents.length)continue;
+    var n=tents.length;
+    var nInd=tents.filter(function(t){return t==='IND';}).length;
+    var nAt=tents.filter(function(t){return t==='AT';}).length;
+    var d=dateStr(r[0]);var et=phaseLabel(r[iE]);var key=prog+'|||'+alvo;
+    if(!byKey[key])byKey[key]=makeProg(prog,alvo,'Evento DTT','% IND',80);
+    byKey[key].sess.push({d:d,v:Math.round(nInd/n*1000)/10,v2:Math.round(nAt/n*1000)/10,et:et,n:n});
+  }
+  // Aggregate by date+phase within each alvo
+  Object.values(byKey).forEach(function(p){
+    var byDate={};
+    p.sess.forEach(function(s){var k=s.d+'|'+s.et;if(!byDate[k])byDate[k]={inds:[],ats:[],d:s.d,et:s.et};byDate[k].inds.push(s.v);byDate[k].ats.push(s.v2);});
+    p.sess=Object.values(byDate).sort(function(a,b){return sortKey(a.d)-sortKey(b.d);}).map(function(bd){
+      return{d:bd.d,v:Math.round(bd.inds.reduce(function(a,b){return a+b;},0)/bd.inds.length*10)/10,v2:Math.round(bd.ats.reduce(function(a,b){return a+b;},0)/bd.ats.length*10)/10,et:bd.et};
+    });
+    if(p.sess.length)out.push(p);
+  });
+}
+
+function parseIntervalo(rows,out){
+  var hi=findHdrRow(rows,'Data');if(hi<0)return;
+  var hdr=rows[hi].map(function(c){return c?String(c).trim():'';});
+  var t1=-1;for(var ci=0;ci<hdr.length;ci++){if(hdr[ci]==='1'){t1=ci;break;}}
+  var tCols=[];for(var j=0;j<10;j++)tCols.push(t1>=0?t1+j:4+j);
+  var byKey={};
+  for(var i=hi+1;i<rows.length;i++){
+    var r=rows[i];var prog=String(r[2]||'').trim(),alvo=String(r[3]||'').trim();if(!prog)continue;
+    var intervals=[];tCols.forEach(function(ci){if(r[ci]&&String(r[ci]).trim())intervals.push(String(r[ci]).trim().toUpperCase());});
+    if(!intervals.length)continue;
+    var nS=intervals.filter(function(x){return x==='S';}).length;
+    var v=Math.round(nS/intervals.length*1000)/10;var d=dateStr(r[0]);
+    var key=prog+'|||'+alvo;
+    if(!byKey[key])byKey[key]=makeProg(prog,alvo,'Intervalo','% intervalos S',80);
+    byKey[key].sess.push({d:d,v:v,et:phaseLabel(null),n:intervals.length});
+  }
+  Object.values(byKey).forEach(function(p){p.sess.sort(function(a,b){return sortKey(a.d)-sortKey(b.d);});if(p.sess.length)out.push(p);});
+}
+
+function parseTaxa(rows,out){
+  var hi=findHdrRow(rows,'Data');if(hi<0)return;
+  var hdr=rows[hi].map(function(c){return c?String(c).trim():'';});
+  var iTo=hdr.indexOf('Total'),iTe=hdr.indexOf('Tempo'),iE=hdr.indexOf('Etapa');
+  var byKey={};
+  for(var i=hi+1;i<rows.length;i++){
+    var r=rows[i];var prog=String(r[2]||'').trim();if(!prog)continue;
+    var alvo=r[3]?String(r[3]).trim():'';
+    var total=safeN(r[iTo]);if(!total)continue;
+    var tv=r[iTe];var min=null;
+    if(tv instanceof Date)min=tv.getHours()*60+tv.getMinutes();
+    else if(typeof tv==='number')min=tv*1440;
+    else if(tv){var m=String(tv).match(/(\d+):(\d+)/);if(m)min=parseInt(m[1])*60+parseInt(m[2]);}
+    if(!min||min<0.5)min=1;
+    var v=Math.round(total/min*100)/100;var d=dateStr(r[0]);var key=prog+'|||'+alvo;
+    if(!byKey[key])byKey[key]=makeProg(prog,alvo,'Taxa','resp/min',null);
+    byKey[key].sess.push({d:d,v:v,et:phaseLabel(r[iE]),total:total,min:Math.round(min*10)/10});
+  }
+  Object.values(byKey).forEach(function(p){p.sess.sort(function(a,b){return sortKey(a.d)-sortKey(b.d);});if(p.sess.length)out.push(p);});
+}
+
+function parseMandoVocal(rows,out){
+  var hi=findHdrRow(rows,'Data');if(hi<0)return;
+  var byKey={};
+  for(var i=hi+1;i<rows.length;i++){
+    var r=rows[i];var prog=String(r[2]||'').trim(),alvo=String(r[3]||'').trim();if(!prog)continue;
+    var ind=safeN(r[5]),ajuda=safeN(r[6]),gest=safeN(r[7]);
+    if(ind===null&&ajuda===null)continue;
+    var total=(ind||0)+(ajuda||0)+(gest||0);var d=dateStr(r[0]);var key=prog+'|||'+alvo;
+    if(!byKey[key])byKey[key]=makeProg(prog,alvo,'Frequência','mandos/sessão',null);
+    byKey[key].sess.push({d:d,v:total,et:phaseLabel(r[4]),vInd:ind||0,vAj:ajuda||0,vGest:gest||0});
+  }
+  Object.values(byKey).forEach(function(p){p.sess.sort(function(a,b){return sortKey(a.d)-sortKey(b.d);});if(p.sess.length)out.push(p);});
+}
+
+function parseAutomon(rows,out){
+  var hi=findHdrRow(rows,'Programa');if(hi<0)return;
+  var byKey={};
+  for(var i=hi+1;i<rows.length;i++){
+    var r=rows[i];if(!r[0])continue;
+    var prog=String(r[2]||'').trim(),alvo=String(r[3]||'').trim();if(!prog)continue;
+    var trials=[];for(var ci=4;ci<=8;ci++){if(r[ci]&&String(r[ci]).trim())trials.push(String(r[ci]).trim().toUpperCase());}
+    if(!trials.length)continue;
+    var nS=trials.filter(function(t){return t==='S';}).length;
+    var v=Math.round(nS/trials.length*1000)/10;var d=dateStr(r[0]);var key=prog+'|||'+alvo;
+    if(!byKey[key])byKey[key]=makeProg(prog,alvo,'Automonitoramento','% S',80);
+    byKey[key].sess.push({d:d,v:v,et:'Inter.'});
+  }
+  Object.values(byKey).forEach(function(p){p.sess.sort(function(a,b){return sortKey(a.d)-sortKey(b.d);});if(p.sess.length)out.push(p);});
+}
+
+function parseAssent(rows,out){
+  var hi=findHdrRow(rows,'Data');if(hi<0)return;
+  var byKey={};
+  for(var i=hi+1;i<rows.length;i++){
+    var r=rows[i];var prog=String(r[2]||'').trim(),alvo=String(r[3]||'').trim();if(!prog)continue;
+    var assim=safeN(r[4]),retirada=safeN(r[5]);if(assim===null&&retirada===null)continue;
+    var total=(assim||0)+(retirada||0);var v=total>0?Math.round((assim||0)/total*1000)/10:0;
+    var d=dateStr(r[0]);var key=prog+'|||'+alvo;
+    if(!byKey[key])byKey[key]=makeProg(prog,alvo,'Assentimento','% assentimento',null);
+    byKey[key].sess.push({d:d,v:v,et:'Inter.',assim:assim||0,retirada:retirada||0});
+  }
+  Object.values(byKey).forEach(function(p){p.sess.sort(function(a,b){return sortKey(a.d)-sortKey(b.d);});if(p.sess.length)out.push(p);});
+}
+
+// ══════════════════════════════════════════════════════
+// STATE + PERSISTENCE
+// ══════════════════════════════════════════════════════
+var S={view:'painel',cid:1,clients:[{id:1,code:'M.C.J.L.',ini:'MC',diag:'TEA',notas:[]}],programs:[],ioa:[],integ:[],checklist:{pre:[{id:'p1',t:'Revisar dados do cliente pré-supervisão',done:false},{id:'p2',t:'Analisar dados dos programas observados',done:false},{id:'p3',t:'Analisar dados do PIC',done:false},{id:'p4',t:'Determinar ação para cada programa',done:false},{id:'p5',t:'Verificar checklist de programas realizados em sessão',done:false}],during:[{id:'d1',t:'Fazer rapport em relação ao caso',done:false},{id:'d2',t:'Seguir agenda de supervisão',done:false},{id:'d3',t:'Rever habilidades do aplicador pendentes',done:false},{id:'d4',t:'Verificar frequência de aplicação dos programas',done:false},{id:'d5',t:'Seguir fluxograma de tomada de decisão',done:false},{id:'d6',t:'Apresentar e discutir procedimentos novos',done:false},{id:'d7',t:'Apresentar e discutir programas novos',done:false},{id:'d8',t:'Fornecer feedback positivo ao aplicador',done:false},{id:'d9',t:'Fornecer feedback corretivo',done:false},{id:'d10',t:'Usar estratégias baseadas em evidências',done:false},{id:'d11',t:'Preencher checklist de habilidades do aplicador',done:false},{id:'d12',t:'Finalizar com rapport final',done:false}],post:[{id:'po1',t:'Descrever novos procedimentos utilizados',done:false},{id:'po2',t:'Descrever novos programas para início',done:false},{id:'po3',t:'Escrever plano de conduta',done:false},{id:'po4',t:'Enviar análises e feedbacks ao grupo',done:false}]},flow:null,chat:[],openCards:{},flows:{},driveRootFolder:'Intervenção Individual',driveClientId:'',paisTexts:{}};
+
+function ioaToggleMethod(sfx, method){
+  var totBlk=gi('qi-tot-blk-'+sfx);
+  var tentBlk=gi('qi-tent-blk-'+sfx);
+  if(totBlk)totBlk.style.display=method==='total'?'block':'none';
+  if(tentBlk)tentBlk.style.display=method==='tentativa'?'block':'none';
+}
+function persist(){try{
+  var save={clients:S.clients.map(function(c){return{id:c.id,code:c.code,ini:c.ini,diag:c.diag,notas:c.notas||[]};})};
+  localStorage.setItem('aba_clients',JSON.stringify(save));
+  var progSave=S.programs.map(function(p){return{cid:p.cid,programa:p.programa,alvo:p.alvo,tipo:p.tipo,metrica:p.metrica,crit:p.crit,sess:p.sess,status:p.status,notes:p.notes};});
+  localStorage.setItem('aba_programs',JSON.stringify(progSave));
+  localStorage.setItem('aba_schema','3');
+  localStorage.setItem('aba_ioa',JSON.stringify(S.ioa));
+  localStorage.setItem('aba_integ',JSON.stringify(S.integ));
+  localStorage.setItem('aba_checklist',JSON.stringify(S.checklist));
+}catch(e){}}
+
+function loadPersisted(){try{
+  // Schema v2: programa = col D (program name), alvo = col E (target name)
+  // If schema is old or missing, discard programs to force re-import with correct structure
+  var schema=localStorage.getItem('aba_schema');
+  if(schema!=='3'){
+    localStorage.removeItem('aba_programs');
+    localStorage.setItem('aba_schema','3');
+  }
+  var c=localStorage.getItem('aba_clients');
+  if(c){var d=JSON.parse(c);if(d.clients&&d.clients.length){S.clients=d.clients;S.cid=S.clients[0].id;}}
+  var p=localStorage.getItem('aba_programs');
+  if(p){
+    var progs=JSON.parse(p);
+    // Extra validation: every entry must have a non-empty programa field that looks like a program name
+    // If any programa is empty or all entries have identical programa, data is suspect — clear it
+    var valid=progs.length>0 && progs.every(function(x){return x.programa&&x.programa.length>0;});
+    if(valid) S.programs=progs;
+  }
+  var io=localStorage.getItem('aba_ioa');if(io)S.ioa=JSON.parse(io);
+  var ig=localStorage.getItem('aba_integ');if(ig)S.integ=JSON.parse(ig);
+  var ck=localStorage.getItem('aba_checklist');if(ck)S.checklist=JSON.parse(ck);
+  var pt=localStorage.getItem('aba_pais');if(pt)S.paisTexts=JSON.parse(pt);
+  var df=localStorage.getItem('aba_drive_folder');if(df)S.driveRootFolder=df;
+  var dc=localStorage.getItem('aba_drive_client_id');if(dc)S.driveClientId=dc;
+}catch(e){}}
+
+function clearData(){
+  if(!confirm('Limpar todos os programas e reimportar? As notas de IOA e integridade serão mantidas.'))return;
+  S.programs=[];
+  S.clients.forEach(function(c){c.notas=[];});
+  localStorage.removeItem('aba_programs');
+  localStorage.removeItem('aba_clients');
+  localStorage.setItem('aba_schema','3');
+  S.openCards={};S.flows={};
+  persist();rv();
+  toast('Dados limpos. Importe o XLSX novamente.');
+}
+// ══════════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════════
+var VIEW_META={painel:['Painel - Briefing','Prioridade por urgência clínica · decisão inline'],notas:['Notas de Sessão','Prontuário qualitativo - presença, registro, serviço'],ioa:['IOA e Integridade','Confiabilidade e fidelidade de implementação'],supervisao:['Checklist de Supervisão','Pré · Durante · Pós supervisão direta'],relatorio:['Relatório / PTI','Síntese narrativa + Plano de Tratamento Individualizado'],pais:['Para os Pais','Resumo acessível do progresso do seu filho'],ia:['Assistente','Análise contextualizada com dados reais do cliente']};
+function goV(v){S.view=v;document.querySelectorAll('.nb').forEach(function(b,i){b.classList.toggle('on',['painel','notas','supervisao','relatorio','pais','ia'][i]===v);});gi('tb-title').textContent=VIEW_META[v][0];gi('tb-sub').textContent=VIEW_META[v][1];rv();}
+function cl(){return S.clients.find(function(c){return c.id===S.cid;})||S.clients[0];}
+function cprogs(){return S.programs.filter(function(p){return p.cid===S.cid;});}
+function cnotas(){var c=cl();return c&&c.notas?c.notas:[];}
+function cioa(){return S.ioa.filter(function(r){return r.cid===S.cid;});}
+function cinteg(){return S.integ.filter(function(r){return r.cid===S.cid;});}
+function selectClient(id){S.cid=id;S.openCards={};renderSidebar();gi('tb-client').textContent=cl().code;rv();}
+function addClient(){
+  gi('cmCode').value=''; gi('cmDiag').value='';
+  gi('clientModalTitle').textContent='Novo cliente';
+  gi('clientModal')._editId=null;
+  gi('clientModal').style.display='flex';
+  setTimeout(function(){gi('cmCode').focus();},80);
+}
+function clientModalKey(e){if(e.key==='Enter')submitClientModal();}
+function submitClientModal(){
+  var code=gi('cmCode').value.trim();
+  if(!code){toast('Informe a sigla do cliente.');return;}
+  var diag=gi('cmDiag').value.trim();
+  var editId=gi('clientModal')._editId;
+  if(editId){
+    var c=S.clients.find(function(x){return x.id===editId;});
+    if(c){c.code=code;c.diag=diag;c.ini=code.replace(/\./g,'').substring(0,2).toUpperCase();}
+  }else{
+    var cid=Date.now();
+    S.clients.push({id:cid,code:code,ini:code.replace(/\./g,'').substring(0,2).toUpperCase(),diag:diag,ativo:true,notas:[]});
+    S.cid=cid;
+  }
+  gi('clientModal').style.display='none';
+  renderSidebar();persist();rv();toast('Cliente salvo.');
+}
+function editClient(id){
+  var c=S.clients.find(function(x){return x.id===id;});if(!c)return;
+  gi('cmCode').value=c.code; gi('cmDiag').value=c.diag||'';
+  gi('clientModalTitle').textContent='Editar cliente';
+  gi('clientModal')._editId=id;
+  gi('clientModal').style.display='flex';
+  setTimeout(function(){gi('cmCode').focus();},80);
+}
+function toggleClientStatus(id){
+  var c=S.clients.find(function(x){return x.id===id;});if(!c)return;
+  c.ativo=(c.ativo===false)?true:false;
+  renderSidebar();persist();
+  if(c.ativo===false&&S.cid===id){
+    var active=S.clients.find(function(x){return x.ativo!==false;});
+    if(active){S.cid=active.id;rv();}
+  }
+  toast(c.ativo===false?'Cliente inativado.':'Cliente reativado.');
+}
+function renderSidebar(query){
+  query=(query||'').toLowerCase().trim();
+  var list=S.clients.filter(function(c){
+    if(!query)return true;
+    return c.code.toLowerCase().includes(query)||(c.diag||'').toLowerCase().includes(query);
+  });
+  gi('clist').innerHTML=list.map(function(c){
+    var inativo=c.ativo===false;
+    return'<div class="ci '+(c.id===S.cid?'on':'')+(inativo?' inativo':'')+'" style="'+(inativo?'opacity:.45':'')+'">'
+      +'<div class="av" onclick="selectClient('+c.id+')" style="cursor:pointer">'+c.ini+'</div>'
+      +'<div style="flex:1;min-width:0;cursor:pointer" onclick="selectClient('+c.id+')">'
+        +'<div class="cn">'+c.code+(inativo?' <span style=\"font-size:9px;opacity:.6\">(inativo)</span>':'')+'</div>'
+        +'<div class="cd">'+(c.diag||'')+'</div>'
+      +'</div>'
+      +'<div class="flex gap4" style="flex-shrink:0">'
+        +'<button style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,.35);font-size:11px;padding:2px 4px" title="Editar" onclick="event.stopPropagation();editClient('+c.id+')">✎</button>'
+        +'<button style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,.35);font-size:10px;padding:2px 4px" title="'+(inativo?'Reativar':'Inativar')+'" onclick="event.stopPropagation();toggleClientStatus('+c.id+')">'+(inativo?'↺':'○')+'</button>'
+      +'</div>'
+      +'</div>';
+  }).join('')
+  +(list.length===0?'<div class="muted" style="font-size:10.5px;padding:8px;text-align:center;color:rgba(255,255,255,.3)">Nenhum cliente encontrado</div>':'');
+}
+function filterClients(q){renderSidebar(q);}
+function rv(){var el=gi('content');if(S.view==='painel')el.innerHTML=vPainel();else if(S.view==='notas')el.innerHTML=vNotas();else if(S.view==='ioa'){S.view='painel';el.innerHTML=vPainel();}else if(S.view==='supervisao')el.innerHTML=vSupervisao();else if(S.view==='relatorio')el.innerHTML=vRelatorio();else if(S.view==='pais')el.innerHTML=vPais();else if(S.view==='ia')el.innerHTML=vIA();}
+
+// ══════════════════════════════════════════════════════
+// GROUPING
+// ══════════════════════════════════════════════════════
+function groupByProg(ps){var map={};var order=[];ps.forEach(function(p){if(!map[p.programa]){map[p.programa]=[];order.push(p.programa);}map[p.programa].push(p);});return order.map(function(k){return{programa:k,alvos:map[k]};});}
+
+// Best representative session series for a program (aggregate across alvos by date)
+function progAggVals(alvos){
+  var byDate={};
+  alvos.forEach(function(a){a.sess.forEach(function(s){if(!byDate[s.d])byDate[s.d]=[];byDate[s.d].push(s.v);});});
+  return Object.keys(byDate).sort(function(a,b){return sortKey(a)-sortKey(b);}).map(function(d){var arr=byDate[d];return Math.round(arr.reduce(function(a,b){return a+b;},0)/arr.length*10)/10;});
+}
+
+// ══════════════════════════════════════════════════════
+// MINI CHART
+// ══════════════════════════════════════════════════════
+function miniChart(sess,crit,w,h){
+  w=w||96;h=h||32;crit=crit||80;
+  var vals=sess.map(function(s){return s.v;});
+  if(vals.length<2)return'<svg width="'+w+'" height="'+h+'"></svg>';
+  var pts=vals.map(function(v,i){return((i/(vals.length-1))*w).toFixed(1)+','+(h-((v/100)*(h-4))-2).toFixed(1);}).join(' ');
+  var lv=vals[vals.length-1];
+  var col=crit?(lv>=crit?'#1A6640':lv>=50?'#8A4F08':'#8A1F1F'):'#8A4F08';
+  var cy=crit?(h-((crit/100)*(h-4))-2).toFixed(1):null;
+  // Phase change markers
+  var markers='';
+  var sections=phaseSections(sess);var cumIdx=0;
+  for(var si=1;si<sections.length;si++){
+    cumIdx+=sections[si-1].sessions.length;
+    var x=((cumIdx/(vals.length-1))*w).toFixed(1);
+    markers+='<line x1="'+x+'" y1="0" x2="'+x+'" y2="'+h+'" stroke="#CBC8C0" stroke-width="0.8" stroke-dasharray="2,2"/>';
+  }
+  return'<svg width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" style="display:block">'
+    +(cy?'<line x1="0" y1="'+cy+'" x2="'+w+'" y2="'+cy+'" stroke="#E3E0D8" stroke-width="0.8" stroke-dasharray="3,3"/>':'')
+    +markers
+    +'<polyline points="'+pts+'" fill="none" stroke="'+col+'" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>'
+    +'</svg>';
+}
+
+// ══════════════════════════════════════════════════════
+// VIEW: PAINEL (briefing)
+// ══════════════════════════════════════════════════════
+function vPainel(){
+  var c=cl(),ps=cprogs(),notas=cnotas();
+  if(!ps.length){
+    return'<div style="text-align:center;padding:56px 24px">'
+      +'<div style="font-size:28px;margin-bottom:12px;opacity:.25">↑</div>'
+      +'<div style="font-size:14px;font-weight:500;margin-bottom:8px">Importe a planilha do cliente</div>'
+      +'<p class="muted" style="max-width:340px;margin:0 auto 20px;line-height:1.7">Clique em <strong>↑ Importar XLSX</strong> no topo para carregar a planilha de coleta de dados.</p>'
+      +'<button class="btn btn-dark" onclick="gi(\'xlsxIn\').click()">↑ Importar XLSX</button></div>';
+  }
+
+  var grupos=groupByProg(ps);
+  // Apply filters
+  var fF=S.filters||{prog:'',alvo:'',tipo:'',tend:'',fase:''};
+  var tipos=[...new Set(ps.map(function(p){return p.tipo;}))].sort();
+  var gruposFilt=grupos.map(function(g){
+    var af=g.alvos.filter(function(a){
+      if(fF.prog&&g.programa!==fF.prog)return false;
+      if(fF.alvo&&a.alvo!==fF.alvo)return false;
+      if(fF.tipo&&a.tipo!==fF.tipo)return false;
+      if(fF.fase){var ph=currentPhase(a.sess);if(ph!==fF.fase)return false;}
+      if(fF.tend){var vs=a.sess.map(function(s){return s.v;});var t=trendInfo(vs);var tbase=t.lbl.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');var fbase=fF.tend.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');if(!tbase.includes(fbase))return false;}
+      // Date range filter — filter sessions, not exclude the whole alvo
+      if(fF.dateFrom||fF.dateTo){
+        var from=fF.dateFrom?sortKey(fF.dateFrom.split('-').reverse().join('/')):0;
+        var to=fF.dateTo?sortKey(fF.dateTo.split('-').reverse().join('/')):99999999;
+        a={programa:a.programa,alvo:a.alvo,tipo:a.tipo,metrica:a.metrica,crit:a.crit,status:a.status,notes:a.notes,
+           sess:a.sess.filter(function(s){var k=sortKey(s.d);return k>=from&&k<=to;})};
+        if(!a.sess.length)return false;
+      }
+      return true;
+    });
+    return{programa:g.programa,alvos:af};
+  }).filter(function(g){return g.alvos.length;});
+
+  // Sort groups by urgency (worst first)
+  gruposFilt.sort(function(a,b){
+    var ua=Math.min.apply(null,a.alvos.map(function(al){return urgencyLevel(autoDecide(al.sess,al.crit),currentPhase(al.sess));}));
+    var ub=Math.min.apply(null,b.alvos.map(function(al){return urgencyLevel(autoDecide(al.sess,al.crit),currentPhase(al.sess));}));
+    return ua-ub;
+  });
+
+  // Metrics
+  var nProgs=grupos.length,nAlvos=ps.length;
+  var urgList=ps.map(function(p){return autoDecide(p.sess,p.crit);});
+  var nUrg=urgList.filter(function(d){return d==='DESCONTINUAR'||d==='MODIFICAR';}).length;
+  var nOk=urgList.filter(function(d){return d==='MANTER'||d==='CONCLUIDO';}).length;
+  var notas_aba=notas.filter(function(n){return n.srv&&n.srv.toUpperCase().includes('ABA')&&n.reg;});
+  var ioaLow=cioa().filter(function(r){return r.pct<80;}).length;
+
+  return'<div class="sec-title">'+c.code+(c.diag?' - '+c.diag:'')+'</div>'
+    // Metrics strip
+    +'<div class="g4 mb16">'
+    +'<div class="met"><div class="met-l">Programas</div><div class="met-v">'+nProgs+'</div><div class="met-s">'+nAlvos+' alvos</div></div>'
+    +'<div class="met"><div class="met-l">Precisam atenção</div><div class="met-v" style="color:'+(nUrg>0?'var(--r)':'var(--g)')+'">'+nUrg+'</div><div class="met-s">modificar/desc.</div></div>'
+    +'<div class="met"><div class="met-l">Em progresso</div><div class="met-v" style="color:var(--g)">'+nOk+'</div><div class="met-s">manter/concluído</div></div>'
+    +'<div class="met"><div class="met-l">IOA baixo</div><div class="met-v" style="color:'+(ioaLow>0?'var(--a)':'var(--ink)')+'">'+ioaLow+'</div><div class="met-s">< 80%</div></div>'
+    +'</div>'
+
+    // Last 2 ABA notes inline
+    +(notas_aba.length?'<div class="card mb16"><div class="card-hd"><div><div class="card-title">Últimas notas ABA</div></div><button class="btn btn-sm" onclick="goV(\'notas\')">Ver todas →</button></div>'
+      +notas_aba.slice(-2).reverse().map(function(n){return'<div class="nota" style="margin-bottom:7px"><div class="nota-hd"><span class="nota-srv '+srvClass(n.srv)+'">'+n.srv+'</span><span class="nota-date">'+n.d+'</span>'+(n.ent?'<span class="nota-time">'+n.ent+(n.sai?' – '+n.sai:'')+'</span>':'')+'</div><div class="nota-txt">'+n.reg+'</div></div>';}).join('')
+      +'</div>':'')
+
+    // Filter bar — dropdowns built from real data (no inline escaping)
+    +(function(){
+      function buildOpt(val, label, selected){
+        return '<option value="'+val+'"'+(selected?' selected':'')+'>'+label+'</option>';
+      }
+      var progOpts = grupos.map(function(g){
+        return buildOpt(g.programa, g.programa, fF.prog===g.programa);
+      }).join('');
+      var alvosBase = fF.prog
+        ? grupos.filter(function(g){return g.programa===fF.prog;})
+        : grupos;
+      var alvosLista = alvosBase.reduce(function(acc,g){
+        return acc.concat(g.alvos.filter(function(a){return a.alvo!=='';}).map(function(a){return a.alvo;}));
+      },[]);
+      var alvosUniq = [...new Set(alvosLista)].sort();
+      var alvoOpts = alvosUniq.map(function(a){return buildOpt(a,a,fF.alvo===a);}).join('');
+      var tipoOpts = tipos.map(function(t){return buildOpt(t,t,fF.tipo===t);}).join('');
+      var faseOpts='<option value="">Todas as fases</option>'
+        +'<option value="LB"'+(fF.fase==='LB'?' selected':'')+'>LB</option>'
+        +'<option value="Inter."'+(fF.fase==='Inter.'?' selected':'')+'>Inter.</option>'
+        +'<option value="Manut."'+(fF.fase==='Manut.'?' selected':'')+'>Manut.</option>'
+        +'<option value="Gener."'+(fF.fase==='Gener.'?' selected':'')+'>Gener.</option>';
+      var dateFrom=fF.dateFrom||''; var dateTo=fF.dateTo||'';
+      var tendOpts='<option value="">Todas tendências</option>'
+        +'<option value="Ascendente"'+(fF.tend==='Ascendente'?' selected':'')+'>↗ Ascendente</option>'
+        +'<option value="Descendente"'+(fF.tend==='Descendente'?' selected':'')+'>↘ Descendente</option>'
+        +'<option value="Variavel"'+(fF.tend==='Variavel'?' selected':'')+'>↕ Variável</option>'
+        +'<option value="Plana"'+(fF.tend==='Plana'?' selected':'')+'>→ Plana</option>';
+      return '<div class="fbar mb16" style="flex-wrap:wrap">'
+        +'<span class="muted" style="font-size:10px;white-space:nowrap">Filtrar:</span>'
+        +'<select class="fbar-sel" data-fk="prog" data-cascade="alvo" onchange="fbarChange(this)">'
+        +'<option value="">Todos os programas</option>'+progOpts+'</select>'
+        +'<select class="fbar-sel" data-fk="alvo" onchange="fbarChange(this)">'
+        +'<option value="">Todos os alvos</option>'+alvoOpts+'</select>'
+        +'<select class="fbar-sel" data-fk="tipo" onchange="fbarChange(this)">'
+        +'<option value="">Todos os tipos</option>'+tipoOpts+'</select>'
+        +'<select class="fbar-sel" data-fk="fase" onchange="fbarChange(this)">'+faseOpts+'</select>'
+        +'<select class="fbar-sel" data-fk="tend" onchange="fbarChange(this)">'+tendOpts+'</select>'
+        +'<div class="flex aic gap4" style="flex-shrink:0">'
+        +'<span class="muted" style="font-size:10px;white-space:nowrap">De:</span>'
+        +'<input type="date" class="fbar-sel fi" value="'+dateFrom+'" style="padding:3px 6px;font-size:11px;width:120px" data-fk="dateFrom" onchange="fbarChange(this)">'
+        +'<span class="muted" style="font-size:10px">até</span>'
+        +'<input type="date" class="fbar-sel fi" value="'+dateTo+'" style="padding:3px 6px;font-size:11px;width:120px" data-fk="dateTo" onchange="fbarChange(this)">'
+        +'</div>'
+        +'<button class="btn btn-xs" onclick="S.filters={};rv()">Limpar</button>'
+        +'<span class="muted" style="margin-left:auto;font-size:10px">'+gruposFilt.reduce(function(s,g){return s+g.alvos.length;},0)+' alvos</span>'
+        +'</div>';
+    })()
+
+    // Program cards ordered by urgency
+
+    +'<div class="sec-title">Programas</div>'
+
+    +gruposFilt.map(function(g){return renderProgGroup(g);}).join('')
+    ;
+}
+
+function setF(k,v){if(!S.filters)S.filters={};S.filters[k]=v;rv();}
+function toggleEl(btn){var id=btn.dataset.tid;var el=document.getElementById(id);if(el)el.style.display=el.style.display==='none'?'block':'none';}
+function hideEl(btn){var id=btn.dataset.tid;var el=document.getElementById(id);if(el)el.style.display='none';}
+function fbarChange(el){
+  var k=el.dataset.fk, v=el.value;
+  if(!S.filters)S.filters={};
+  S.filters[k]=v;
+  // cascade: if programa changed, reset alvo
+  if(k==='prog') S.filters['alvo']='';
+  rv();
+}
+
+function renderProgGroup(g){
+  var namedAlvos=g.alvos.filter(function(a){return a.alvo!=='';});
+  var semAlvo=g.alvos.find(function(a){return a.alvo==='';});
+  var aggVals=progAggVals(g.alvos);
+  // Use agg vals to decide; need a fake sess array for autoDecide
+  var aggSess=aggVals.map(function(v){return{v:v,et:currentPhase(g.alvos[0].sess)};});
+  var aggDec=autoDecide(aggSess,g.alvos[0].crit||80);
+  var T=aggDec?TERMS[aggDec]:null;
+  return'<div style="margin-bottom:14px">'
+    +'<div style="display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--surf2);border:1px solid var(--b);border-bottom:none;border-radius:var(--rad) var(--rad) 0 0">'
+    +'<span style="font-size:13px;font-weight:600;color:var(--ink)">'+g.programa+'</span>'
+    +(T?'<span class="badge '+T.bc+'" style="font-size:10px">'+T.icon+' '+T.label+'</span>':'')
+    +'<span class="muted" style="margin-left:auto;font-size:10px">'+g.alvos.length+' alvo'+(g.alvos.length>1?'s':'')+'</span>'
+    +'</div>'
+    // Sem-alvo entry (program-level data)
+    +(semAlvo?'<div style="border-left:1px solid var(--b);border-right:1px solid var(--b)">'+renderAlvoCard(g.programa,semAlvo,true)+'</div>':'')
+    // Named alvos
+    +namedAlvos.map(function(a){return'<div style="border-left:1px solid var(--b);border-right:1px solid var(--b)">'+renderAlvoCard(g.programa,a,false)+'</div>';}).join('')
+    +'<div style="height:1px;background:var(--b);border-left:1px solid var(--b);border-right:1px solid var(--b)"></div>'
+    +'</div>';
+}
+
+function renderAlvoCard(progName,a,isProgLevel){
+  var key=esc(progName+'|||'+a.alvo);
+  var vals=a.sess.map(function(s){return s.v;});
+  var curPh=currentPhase(a.sess);
+  var curSess=sessInCurrentPhase(a.sess);
+  var curVals=curSess.map(function(s){return s.v;});
+  var dec=autoDecide(a.sess,a.crit);
+  var T=dec?TERMS[dec]:null;
+  var t=trendInfo(curVals); // trend from current phase only
+  var lv=vals.length?vals[vals.length-1]:0;
+  var col=a.crit?(lv>=a.crit?'var(--g)':lv>=50?'var(--a)':'var(--r)'):'var(--ink3)';
+  var metric=a.tipo==='Taxa'?'r/m':'%';
+  var urgClass=urgencyCard(dec);
+  var isOpen=S.openCards[key];
+  // IOA for this program
+  var myIOA=cioa().filter(function(r){return r.programa===progName;});
+
+  return'<div class="prog-card '+urgClass+'" style="margin-bottom:8px">'
+    // Header - clickable to expand
+    +'<div class="prog-card-hd" onclick="toggleCard(\''+key+'\')" style="user-select:none">'
+    +'<div>'
+    +'<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">'
+    +(isProgLevel
+      ?'<span style="font-size:12px;color:var(--ink2);font-style:italic">dados gerais do programa</span>'
+      :'<span class="prog-name" style="font-size:12.5px">→ '+a.alvo+'</span>')
+    +tipoBadge(a.tipo)+phaseBadge(curPh)
+    +(a.status&&a.status!=='em_andamento'?(function(){var sm={'finalizado':'bg-g','interrompido':'bg-r','adicionado':'bg-p','nao_iniciado':'bg-n'};var sl={'finalizado':'Finalizado','interrompido':'Interrompido','adicionado':'Adicionado','nao_iniciado':'Não iniciado'};return'<span class="badge '+(sm[a.status]||'bg-n')+'" style="font-size:9.5px">'+(sl[a.status]||a.status)+'</span>';})():'')
+    +'</div>'
+    +'<div class="prog-alvo" style="margin-top:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
+    +(T?'<span class="badge '+T.bc+'">'+T.icon+' '+T.label+'</span>':'<span class="badge bg-n">-</span>')
+    +'<span class="badge '+t.bc+'">'+t.lbl+'</span>'
+    +(curPh!=='LB'?'<span style="font-size:10px;color:var(--ink3)">'+curSess.length+' sess. na fase</span>':'')
+    +'</div>'
+    +'</div>'
+    // Right side: value + sparkline
+    +'<div style="display:flex;align-items:center;gap:12px;flex-shrink:0">'
+    +'<div style="text-align:right">'
+    +'<div style="font-size:18px;font-weight:300;color:'+col+';font-family:\'JetBrains Mono\',monospace">'+lv+metric+'</div>'
+    +(a.crit?'<div style="font-size:9.5px;color:var(--ink4)">critério '+a.crit+metric+'</div>':'')
+    +'</div>'
+    +miniChart(a.sess,a.crit)
+    +'<div style="font-size:12px;color:var(--ink3);flex-shrink:0">'+(isOpen?'▲':'▼')+'</div>'
+    +'</div>'
+    +'</div>'
+
+    // Expanded detail - shown inline when open
+    +(isOpen?renderAlvoDetail(progName,a,key):'')
+
+    // Quick actions bar (always visible)
+    +'<div class="prog-card-actions">'
+    +'<button class="btn btn-xs btn-dark" onclick="event.stopPropagation();openFlowFor(\''+key+'\')">↻ Fluxo de decisão</button>'
+    +'<button class="btn btn-xs" onclick="event.stopPropagation();openNoteFor(\''+key+'\')">✎ Nota</button>'
+    +'<button class="btn btn-xs" onclick="event.stopPropagation();goV(\'ia\');setTimeout(function(){sendIACtx(\''+key+'\')},300)">✦ Analisar com IA</button>'
+    +(function(){
+      var q=progQualidade(progName);
+      if(!q.ioa.length&&!q.integ.length) return '';
+      var ioaPart=q.ioa.length?'IOA: '+q.ioa.map(function(r){return r.pct+'%';}).join(', '):'';
+      var intPart=q.integ.length?'Int: '+q.integ.map(function(r){return r.pct+'%';}).join(', '):'';
+      var txt=[ioaPart,intPart].filter(Boolean).join(' · ');
+      var col=q.blocker?'var(--r)':q.aviso?'var(--a)':'var(--ink3)';
+      return '<span style="margin-left:auto;font-size:10px;color:'+col+'">'+txt+'</span>';
+    })()
+    +'</div>'
+    +'</div>';
+}
+
+function toggleCard(key){S.openCards[key]=!S.openCards[key];rv();}
+
+function renderAlvoDetail(progName,a,key){
+  var vals=a.sess.map(function(s){return s.v;});
+  var curSess=sessInCurrentPhase(a.sess);
+  var curVals=curSess.map(function(s){return s.v;});
+  var dec=autoDecide(a.sess,a.crit);
+  var T=TERMS[dec]||TERMS.MANTER;
+  var sections=phaseSections(a.sess);
+  var metric=a.tipo==='Taxa'?'r/m':'%';
+
+  // Flow state for this alvo
+  var flowKey='flow_'+key;
+  var flow=S.flows&&S.flows[flowKey];
+
+  return'<div class="prog-detail">'
+    // Phase timeline
+    +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:12px;flex-wrap:wrap">'
+    +'<span class="muted" style="font-size:10px">Fases:</span>'
+    +sections.map(function(sec,i){return phaseBadge(sec.phase)+' <span style="font-size:10px;color:var(--ink4)">'+sec.sessions.length+'</span>'+(i<sections.length-1?'<span style="color:var(--ink4)"> → </span>':'');}).join('')
+    +'</div>'
+
+    // Chart
+    +'<div style="margin-bottom:12px"><canvas id="chart-'+key.replace(/[^a-zA-Z0-9]/g,'_')+'" height="132" style="width:100%;display:block"></canvas></div>'
+
+    +qualidadePanel(progName,key)
+    +'<div class="g2">'
+    +'<div>'
+    // Fase atual summary
+    +'<div style="font-size:11px;font-weight:500;color:var(--ink);margin-bottom:6px">Fase atual: '+phaseBadge(currentPhase(a.sess))+'</div>'
+    +'<div class="flex gap8 wrap mb12">'
+    +(a.tipo==='Evento DTT'&&curSess.length?'<span class="badge bg-g">% IND: '+curVals[curVals.length-1]+'%</span><span class="badge bg-r">% AT: '+(curSess[curSess.length-1].v2||0)+'%</span>':'')
+    +'<span class="badge bg-n">'+curVals.length+' sessões na fase</span>'
+    +'</div>'
+    // Notes
+    +'<div class="flex aic jb" style="margin-bottom:5px">'
+    +'<span style="font-size:10px;font-weight:500;color:var(--ink3);text-transform:uppercase;letter-spacing:.6px;font-family:\'JetBrains Mono\',monospace">Status do alvo</span>'
+    +'</div>'
+    +'<select class="fs" id="status-'+key.replace(/[^a-zA-Z0-9]/g,'_')+'" onchange="saveStatus(\''+key+'\',this.value)" style="margin-bottom:10px;font-size:12px;padding:5px 8px">'
+    +'<option value="em_andamento"'+(a.status==='em_andamento'||!a.status?' selected':'')+'>Em andamento</option>'
+    +'<option value="finalizado"'+(a.status==='finalizado'?' selected':'')+'>Finalizado ✓</option>'
+    +'<option value="interrompido"'+(a.status==='interrompido'?' selected':'')+'>Interrompido</option>'
+    +'<option value="adicionado"'+(a.status==='adicionado'?' selected':'')+'>Adicionado (novo)</option>'
+    +'<option value="nao_iniciado"'+(a.status==='nao_iniciado'?' selected':'')+'>Não iniciado</option>'
+    +'</select>'
+    +'<div style="font-size:10.5px;font-weight:500;color:var(--ink3);margin-bottom:5px;text-transform:uppercase;letter-spacing:.6px;font-family:\'JetBrains Mono\',monospace">Nota clínica</div>'
+    +'<textarea class="fta" id="note-'+key.replace(/[^a-zA-Z0-9]/g,'_')+'" rows="3" style="font-size:12px" placeholder="Registro, alterações, próximos passos...">'+(a.notes||'')+'</textarea>'
+    +'<button class="btn btn-xs btn-green mt6" onclick="saveNote(\''+key+'\')">Salvar nota</button>'
+    +'</div>'
+    +'<div>'
+    // Decision flow inline
+    +'<div style="font-size:10.5px;font-weight:500;color:var(--ink3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.6px;font-family:\'JetBrains Mono\',monospace">Fluxo de decisão clínica</div>'
+    +(flow?renderInlineFlow(flow,key):renderFlowStart(key,a))
+    +'</div>'
+    +'</div>'
+
+    // Sessions history
+    +'<div style="font-size:9.5px;color:var(--ink3);text-transform:uppercase;letter-spacing:.6px;font-family:\'JetBrains Mono\',monospace;margin:12px 0 5px">Histórico de sessões (últimas 30)</div>'
+    +'<div class="flex wrap gap4">'
+    +a.sess.slice(-30).map(function(s,i){
+      var v=s.v;var et=s.et;
+      var bc=a.crit?(v>=a.crit?'bg-g':v>=50?'bg-a':'bg-r'):'bg-n';
+      return'<span class="badge '+bc+'" style="font-size:9.5px;font-family:\'JetBrains Mono\',monospace;min-width:34px;justify-content:center;flex-direction:column;padding:3px 5px;gap:0" title="'+s.d+' ['+et+']">'
+        +'<span>'+v+'</span>'
+        +'<span style="font-size:7.5px;opacity:.7">'+et+'</span>'
+        +'</span>';
+    }).join('')
+    +'</div>'
+    +'</div>';
+}
+
+function progQualidade(progName){
+  // Returns {ioa: [{pct,metodo,data}], integ: [{pct,aplicador,data}], ioaOk, integOk, blocker, aviso}
+  var ioaRecs=cioa().filter(function(r){return r.programa===progName;});
+  var integRecs=cinteg().filter(function(r){return r.programa===progName;});
+  var ioaOk=ioaRecs.length===0?null:ioaRecs.every(function(r){return r.pct>=80;});
+  var integOk=integRecs.length===0?null:integRecs.every(function(r){return r.pct>=80;});
+  var integMin=integRecs.length?Math.min.apply(null,integRecs.map(function(r){return r.pct;})):null;
+  var ioaMin=ioaRecs.length?Math.min.apply(null,ioaRecs.map(function(r){return r.pct;})):null;
+  var blocker=false;var aviso=false;
+  if(ioaMin!==null&&ioaMin<60)blocker=true;           // IOA < 60%: dados inválidos
+  else if(ioaMin!==null&&ioaMin<80)aviso=true;         // IOA 60-79%: dados com ressalva
+  if(integMin!==null&&integMin<60)blocker=true;        // integridade < 60%: procedimento não implementado
+  else if(integMin!==null&&integMin<80)aviso=true;
+  return{ioa:ioaRecs,integ:integRecs,ioaOk:ioaOk,integOk:integOk,ioaMin:ioaMin,integMin:integMin,blocker:blocker,aviso:aviso};
+}
+
+function qualidadePanel(progName, key){
+  var q=progQualidade(progName);
+  var sfx=key.replace(/[^a-zA-Z0-9]/g,'_');
+  var temDados=q.ioa.length>0||q.integ.length>0;
+
+  // Build inline quick-add forms
+  var ioaForm='<div id="qioa-'+sfx+'" style="display:none;margin-top:8px;padding:12px;background:var(--surf2);border-radius:var(--rad);border:1px solid var(--b)">'
+    +'<div style="font-size:11px;font-weight:600;color:var(--ink);margin-bottom:6px">Registrar IOA</div>'
+    +'<div style="font-size:10.5px;color:var(--ink3);margin-bottom:10px;line-height:1.6">Método de coleta usado:</div>'
+    +'<div class="flex gap6 mb10" style="flex-wrap:wrap">'
+    +'<label style="display:flex;align-items:center;gap:5px;font-size:11.5px;cursor:pointer;padding:5px 9px;border:1px solid var(--b);border-radius:var(--rad);background:var(--surf)"><input type="radio" name="qi-met-'+sfx+'" value="total" checked> Contagem total</label>'
+    +'<label style="display:flex;align-items:center;gap:5px;font-size:11.5px;cursor:pointer;padding:5px 9px;border:1px solid var(--b);border-radius:var(--rad);background:var(--surf)"><input type="radio" name="qi-met-'+sfx+'" value="tentativa"> Tentativa a tentativa</label>'
+    +'</div>'
+    +'<div class="g2" style="gap:6px;margin-bottom:8px">'
+    +'<div><div class="fhint" style="margin-bottom:3px">Observador 1</div><input class="fi" id="qi-o1-'+sfx+'" placeholder="Nome" style="font-size:11.5px;padding:5px 8px"></div>'
+    +'<div><div class="fhint" style="margin-bottom:3px">Observador 2</div><input class="fi" id="qi-o2-'+sfx+'" placeholder="Nome" style="font-size:11.5px;padding:5px 8px"></div>'
+    +'</div>'
+    +'<div id="qi-tot-blk-'+sfx+'">'
+    +'<div class="fhint" style="margin-bottom:5px">Quantas ocorrências cada observador registrou na sessão?</div>'
+    +'<div class="g2" style="gap:6px;margin-bottom:6px">'
+    +'<div><div class="fhint" style="margin-bottom:3px">Obs.1 — contagem</div><input class="fi mono" id="qi-n1-'+sfx+'" type="number" min="0" placeholder="Ex: 18" style="font-size:12px;padding:5px 8px"></div>'
+    +'<div><div class="fhint" style="margin-bottom:3px">Obs.2 — contagem</div><input class="fi mono" id="qi-n2-'+sfx+'" type="number" min="0" placeholder="Ex: 17" style="font-size:12px;padding:5px 8px"></div>'
+    +'</div></div>'
+    +'<div id="qi-tent-blk-'+sfx+'" style="display:none">'
+    +'<div class="fhint" style="margin-bottom:5px">Cole as respostas de cada tentativa, separadas por vírgula <span style="opacity:.6">(IND, AT, AP, ERRO, S, N)</span></div>'
+    +'<div class="g2" style="gap:6px;margin-bottom:6px">'
+    +'<div><div class="fhint" style="margin-bottom:3px">Obs.1</div><input class="fi mono" id="qi-t1-'+sfx+'" placeholder="IND,AT,AT,IND,ERRO" style="font-size:11px;padding:5px 8px"></div>'
+    +'<div><div class="fhint" style="margin-bottom:3px">Obs.2</div><input class="fi mono" id="qi-t2-'+sfx+'" placeholder="IND,AT,IND,IND" style="font-size:11px;padding:5px 8px"></div>'
+    +'</div></div>'
+    +'<div id="qi-prev-'+sfx+'" style="margin-bottom:8px"></div>'
+    +'<div class="flex gap6">'
+    +'<button class="btn btn-xs btn-green" data-qk="'+key+'" onclick="quickIOA(this.dataset.qk)">Salvar IOA</button>'
+    +'<button class="btn btn-xs" data-tid="qioa-'+sfx+'" onclick="hideEl(this)">Cancelar</button>'
+    +'</div></div>';
+  var integForm='<div id="qint-'+sfx+'" style="display:none;margin-top:8px;padding:10px;background:var(--surf2);border-radius:var(--rad)">'
+    +'<div style="font-size:10px;font-weight:600;color:var(--ink3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;font-family:JetBrains Mono,monospace">Registrar Integridade</div>'
+    +'<div class="g2" style="gap:6px;margin-bottom:6px">'
+    +'<input class="fi" id="qi-aplic-'+sfx+'" placeholder="Aplicador" style="font-size:11.5px;padding:5px 8px">'
+    +'<div class="flex gap6">'
+    +'<input class="fi mono" id="qi-corr-'+sfx+'" placeholder="Passos corretos" style="font-size:11.5px;padding:5px 8px;flex:1">'
+    +'<input class="fi mono" id="qi-tot-'+sfx+'" placeholder="Total" style="font-size:11.5px;padding:5px 8px;width:70px">'
+    +'</div>'
+    +'</div>'
+    +'<input class="fi" id="qi-obs-'+sfx+'" placeholder="Observações (opcional)" style="font-size:11.5px;padding:5px 8px;margin-bottom:6px;width:100%">'
+    +'<button class="btn btn-xs btn-green" data-qk="'+key+'" onclick="quickInteg(this.dataset.qk)">Salvar</button>'
+    +'<button class="btn btn-xs" data-tid="qint-'+sfx+'" onclick="hideEl(this)" style="margin-left:4px">Cancelar</button>'
+    +'</div>';
+
+  var html='<div style="border:1px solid var(--b);border-radius:var(--rad);padding:11px;margin-bottom:10px;background:var(--surf)">';
+  html+='<div class="flex aic jb mb8">'
+    +'<span style="font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;font-family:JetBrains Mono,monospace">Qualidade dos dados</span>'
+    +'<div class="flex gap6">'
+    +'<button class="btn btn-xs" data-tid="qioa-'+sfx+'" onclick="toggleEl(this)">+ IOA</button>'
+    +'<button class="btn btn-xs" data-tid="qint-'+sfx+'" onclick="toggleEl(this)">+ Integridade</button>'
+    +'</div>'
+    +'</div>';
+
+  if(!temDados){
+    html+='<div class="muted" style="font-size:10.5px">Nenhum registro de IOA ou integridade para este programa.</div>';
+  } else {
+    // IOA records
+    if(q.ioa.length){
+      var ioaColor=q.ioaMin>=80?'var(--g)':q.ioaMin>=60?'var(--a)':'var(--r)';
+      html+='<div class="flex aic gap8 mb6">'
+        +'<span style="font-size:10px;color:var(--ink3);min-width:68px">IOA</span>'
+        +'<div class="flex gap4 wrap">'
+        +q.ioa.map(function(r){var col=r.pct>=80?'bg-g':r.pct>=60?'bg-a':'bg-r';return'<span class="badge '+col+'" style="font-size:10px" title="'+r.metodo+' · '+r.data+'">'+r.pct+'%</span>';}).join('')
+        +'</div>'
+        +(q.ioaMin<80?'<span style="font-size:10px;color:'+ioaColor+'">'+( q.ioaMin<60?'⚠ Dados inválidos — retreinar':'⚠ Dados com ressalva')+'</span>':'')
+        +'</div>';
+    }
+    // Integridade records
+    if(q.integ.length){
+      html+='<div class="flex aic gap8">'
+        +'<span style="font-size:10px;color:var(--ink3);min-width:68px">Integridade</span>'
+        +'<div class="flex gap4 wrap">'
+        +q.integ.map(function(r){var col=r.pct>=80?'bg-g':r.pct>=60?'bg-a':'bg-r';return'<span class="badge '+col+'" style="font-size:10px" title="'+r.aplicador+' · '+r.data+'">'+r.pct+'%</span>';}).join('')
+        +'</div>'
+        +(q.integMin!==null&&q.integMin<80?'<span style="font-size:10px;color:'+(q.integMin<60?'var(--r)':'var(--a)')+'">'+( q.integMin<60?'⚠ Procedimento não implementado':'⚠ Implementação parcial')+'</span>':'')
+        +'</div>';
+    }
+  }
+  html+=ioaForm+integForm+'</div>';
+  return html;
+}
+
+function ioaGetMethod(sfx){
+  var radios=document.querySelectorAll('input[name="qi-met-'+sfx+'"]');
+  for(var i=0;i<radios.length;i++){if(radios[i].checked)return radios[i].value;}
+  return 'total';
+}
+function quickIOA(key){
+  var sfx=key.replace(/[^a-zA-Z0-9]/g,'_');
+  var prog=key.split('|||')[0];
+  var o1=gi('qi-o1-'+sfx)?gi('qi-o1-'+sfx).value.trim():'Obs1';
+  var o2=gi('qi-o2-'+sfx)?gi('qi-o2-'+sfx).value.trim():'Obs2';
+  var met=ioaGetMethod(sfx);
+  var pct=0,trials=null,metLabel='';
+  if(met==='tentativa'){
+    var t1raw=gi('qi-t1-'+sfx)?gi('qi-t1-'+sfx).value.trim():'';
+    var t2raw=gi('qi-t2-'+sfx)?gi('qi-t2-'+sfx).value.trim():'';
+    if(!t1raw||!t2raw){toast('Cole as respostas dos dois observadores.');return;}
+    var t1=t1raw.split(',').map(function(s){return s.trim().toUpperCase();});
+    var t2=t2raw.split(',').map(function(s){return s.trim().toUpperCase();});
+    var n=Math.min(t1.length,t2.length),ag=0;trials=[];
+    for(var i=0;i<n;i++){if(t1[i]===t2[i])ag++;trials.push([t1[i],t2[i]]);}
+    pct=Math.round(ag/n*100);
+    metLabel='Tentativa por tentativa';
+  } else {
+    var n1=safeN(gi('qi-n1-'+sfx)?gi('qi-n1-'+sfx).value:'');
+    var n2=safeN(gi('qi-n2-'+sfx)?gi('qi-n2-'+sfx).value:'');
+    if(n1===null||n2===null){toast('Insira as contagens dos dois observadores.');return;}
+    if(n1===0&&n2===0){toast('As contagens não podem ser ambas zero.');return;}
+    pct=n1===0&&n2===0?100:Math.round(Math.min(n1,n2)/Math.max(n1,n2,1)*100);
+    metLabel='Contagem total';
+  }
+  S.ioa.push({id:Date.now(),cid:S.cid,programa:prog,alvo:'',data:new Date().toLocaleDateString('pt-BR'),obs1:o1,obs2:o2,metodo:metLabel,pct:pct,trials:trials});
+  persist();
+  toast('IOA: '+pct+'%'+(pct>=80?' ✓':pct>=60?' ⚠':' ✗'));
+  gi('qioa-'+sfx).style.display='none';rv();
+}
+
+function quickInteg(key){
+  var sfx=key.replace(/[^a-zA-Z0-9]/g,'_');
+  var prog=key.split('|||')[0];
+  var aplic=gi('qi-aplic-'+sfx)?gi('qi-aplic-'+sfx).value.trim():'';
+  var corr=safeN(gi('qi-corr-'+sfx)?gi('qi-corr-'+sfx).value:'');
+  var tot=safeN(gi('qi-tot-'+sfx)?gi('qi-tot-'+sfx).value:'');
+  var obs=gi('qi-obs-'+sfx)?gi('qi-obs-'+sfx).value.trim():'';
+  if(corr===null){toast('Insira os dados.');return;}
+  var pct=tot?Math.round(corr/tot*100):Math.round(corr);
+  S.integ.push({id:Date.now(),cid:S.cid,programa:prog,aplicador:aplic,data:new Date().toLocaleDateString('pt-BR'),pct:pct,obs:obs});
+  persist();toast('Integridade: '+pct+'%');
+  gi('qint-'+sfx).style.display='none';rv();
+}
+
+function dataStats(vals,crit){
+  crit=crit||80; if(!vals||vals.length<2)return null;
+  var n=vals.length;
+  var slope=(vals[n-1]-vals[0])/(n-1||1);
+  var last3=vals.slice(-3);
+  var avg3=Math.round(last3.reduce(function(a,b){return a+b;},0)/last3.length*10)/10;
+  var range=Math.max.apply(null,vals)-Math.min.apply(null,vals);
+  var mean=vals.reduce(function(a,b){return a+b;},0)/n;
+  var sd=Math.round(Math.sqrt(vals.reduce(function(a,v){return a+(v-mean)*(v-mean);},0)/n)*10)/10;
+  var trendLbl=slope>1.5?'Ascendente ↗':slope<-1.5?'Descendente ↘':'Plana →';
+  var trendCol=slope>1.5?'var(--g)':slope<-1.5?'var(--r)':'var(--ink3)';
+  var varLbl=range>25?'Alta':range>10?'Moderada':'Baixa';
+  var varCol=range>25?'var(--r)':range>10?'var(--a)':'var(--g)';
+  var levelLbl=avg3>=crit?'No critério ✓':avg3>=crit*0.7?'Próximo ao critério':'Abaixo do critério';
+  var levelCol=avg3>=crit?'var(--g)':avg3>=crit*0.7?'var(--a)':'var(--r)';
+  return{slope:slope.toFixed(1),avg3:avg3,range:Math.round(range),sd:sd,n:n,crit:crit,
+    trendLbl:trendLbl,trendCol:trendCol,varLbl:varLbl,varCol:varCol,levelLbl:levelLbl,levelCol:levelCol};
+}
+
+function statsPanel(stats){
+  if(!stats)return'<div class="muted" style="font-size:11px;padding:8px">Menos de 2 sessões na fase atual.</div>';
+  var S='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px">';
+  S+='<div style="background:var(--surf);border:1px solid var(--b);border-radius:var(--rad);padding:8px;text-align:center">'
+    +'<div style="font-size:9px;color:var(--ink3);font-family:\'JetBrains Mono\',monospace;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Nível</div>'
+    +'<div style="font-size:18px;font-weight:400;color:'+stats.levelCol+';font-family:\'JetBrains Mono\',monospace;line-height:1">'+stats.avg3+'%</div>'
+    +'<div style="font-size:9px;color:'+stats.levelCol+';margin-top:3px">'+stats.levelLbl+'</div>'
+    +'</div>';
+  S+='<div style="background:var(--surf);border:1px solid var(--b);border-radius:var(--rad);padding:8px;text-align:center">'
+    +'<div style="font-size:9px;color:var(--ink3);font-family:\'JetBrains Mono\',monospace;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Tendência</div>'
+    +'<div style="font-size:14px;font-weight:500;color:'+stats.trendCol+';line-height:1.2">'+stats.trendLbl+'</div>'
+    +'<div style="font-size:9px;color:var(--ink3);margin-top:3px">slope '+stats.slope+'%/sess · '+stats.n+' sess.</div>'
+    +'</div>';
+  S+='<div style="background:var(--surf);border:1px solid var(--b);border-radius:var(--rad);padding:8px;text-align:center">'
+    +'<div style="font-size:9px;color:var(--ink3);font-family:\'JetBrains Mono\',monospace;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Variabilidade</div>'
+    +'<div style="font-size:18px;font-weight:400;color:'+stats.varCol+';font-family:\'JetBrains Mono\',monospace;line-height:1">'+stats.varLbl+'</div>'
+    +'<div style="font-size:9px;color:var(--ink3);margin-top:3px">amplitude '+stats.range+'% · DP '+stats.sd+'</div>'
+    +'</div>';
+  return S+'</div>';
+}
+
+function renderFlowStart(key,a){
+  var curSess=sessInCurrentPhase(a.sess);
+  var curVals=curSess.map(function(s){return s.v;});
+  var dec=autoDecide(a.sess,a.crit);
+  var T=dec?TERMS[dec]:null;
+  var stats=dataStats(curVals,a.crit||80);
+  var parts=key.split('|||');var progName=parts[0];
+  var q=progQualidade(progName);
+  var qualBlock='';
+  if(q.blocker){
+    qualBlock='<div style="padding:9px 11px;background:var(--r2);border:1px solid var(--r3);border-radius:var(--rad);margin-bottom:8px;font-size:11.5px;color:var(--r)">'
+      +'<strong>⚠ Decisão suspensa:</strong> '
+      +(q.ioaMin!==null&&q.ioaMin<60?'IOA '+q.ioaMin+'% (< 60%) — dados não confiáveis. ':'')
+      +(q.integMin!==null&&q.integMin<60?'Integridade '+q.integMin+'% (< 60%) — procedimento não implementado corretamente. ':'')
+      +'Resolva a qualidade dos dados antes de tomar decisão sobre o programa.</div>';
+  } else if(q.aviso){
+    qualBlock='<div style="padding:9px 11px;background:var(--a2);border:1px solid var(--a3);border-radius:var(--rad);margin-bottom:8px;font-size:11.5px;color:var(--a)">'
+      +'<strong>⚠ Dados com ressalva:</strong> '
+      +(q.ioaMin!==null&&q.ioaMin<80&&q.ioaMin>=60?'IOA '+q.ioaMin+'% (60-79%) — interpretar com cautela. ':'')
+      +(q.integMin!==null&&q.integMin<80&&q.integMin>=60?'Integridade '+q.integMin+'% — implementação parcial pode mascarar tendência real. ':'')
+      +'</div>';
+  }
+  return statsPanel(stats)
+    +qualBlock
+    +'<div style="padding:9px 11px;background:var(--surf2);border-radius:var(--rad);display:flex;align-items:center;justify-content:space-between;gap:10px">'
+    +(T&&!q.blocker?'<span class="badge '+T.bc+'" style="font-size:11px">'+T.icon+' '+T.label+' (decisão automática)</span>':q.blocker?'<span class="muted" style="font-size:11px">Decisão suspensa — verifique qualidade dos dados</span>':'<span class="muted">Dados insuficientes para decisão</span>')
+    +'<button class="btn btn-xs" onclick="startInlineFlow(\''+key+'\')">'+(q.blocker?'Registrar ressalva →':'Confirmar via fluxo →')+'</button>'
+    +'</div>';
+}
+function renderInlineFlow(flow,key){
+  var T=TERMS[flow.step];
+  if(T){
+    return'<div class="flow-card term '+T.cls+'">'
+      +'<div style="font-size:13px;font-weight:600;color:'+T.color+'">'+T.icon+' '+T.label+'</div>'
+      +'<div style="font-size:11.5px;color:var(--ink2);margin:6px 0 10px">'+T.desc+'</div>'
+      +'<div class="field"><label>Justificativa</label><textarea class="fta" id="flJust-'+key.replace(/[^a-zA-Z0-9]/g,'_')+'" rows="2" style="font-size:12px" placeholder="Dados que embasam esta decisão..."></textarea></div>'
+      +'<div class="field"><label>Ações no PTI</label><textarea class="fta" id="flAct-'+key.replace(/[^a-zA-Z0-9]/g,'_')+'" rows="2" style="font-size:12px" placeholder="Modificações a implementar..."></textarea></div>'
+      +'<div class="flex gap6">'
+      +'<button class="btn btn-xs btn-green" onclick="saveInlineFlow(\''+key+'\',\''+flow.step+'\')">Salvar</button>'
+      +'<button class="btn btn-xs" onclick="resetInlineFlow(\''+key+'\')">Refazer</button>'
+      +'</div>'
+      +'<div class="mt8" style="font-size:9.5px;color:var(--ink3)">'+flow.history.map(function(h){var s=FLOW_STEPS.find(function(x){return x.id===h.id;});return(s?s.q.split('?')[0].substring(0,28)+'…':'')+'<b>'+(h.ans?' ✓':' ✗')+'</b>';}).join(' · ')+'</div>'
+      +'</div>';
+  }
+  var step=FLOW_STEPS.find(function(s){return s.id===flow.step;});
+  if(!step)return'';
+  var curSess=sessInCurrentPhase(flow.sess);
+  var sugg=flowSuggest(flow.step,curSess.map(function(s){return s.v;}),flow.crit);
+  var pct=Math.round(flow.history.length/FLOW_STEPS.length*100);
+  return'<div class="flow-card active">'
+    +'<div style="display:flex;align-items:center;gap:7px;margin-bottom:10px">'
+    +'<span style="font-size:9px;color:var(--ink3);font-family:\'JetBrains Mono\',monospace">P.'+(flow.history.length+1)+'</span>'
+    +'<div style="flex:1;height:2px;background:var(--b);border-radius:2px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:var(--ink);border-radius:2px"></div></div>'
+    +'</div>'
+    +'<div style="font-size:12.5px;font-weight:500;color:var(--ink);margin-bottom:4px">'+step.q+'</div>'
+    +'<div style="font-size:11px;color:var(--ink2);margin-bottom:8px">'+step.desc+'</div>'
+    +(sugg?'<div style="padding:5px 8px;background:rgba(0,0,0,.04);border-radius:5px;font-size:10.5px;color:var(--ink2);font-family:\'JetBrains Mono\',monospace;margin-bottom:8px"><span style="color:var(--g);font-weight:600">↗</span> '+sugg+'</div>':'')
+    +'<div class="flex gap6">'
+    +'<button class="btn btn-xs btn-green" onclick="answerInline(\''+key+'\',true)">Sim</button>'
+    +'<button class="btn btn-xs" onclick="answerInline(\''+key+'\',false)">Não</button>'
+    +'</div>'
+    +(flow.history.length?'<div class="flow-conn" style="margin-top:8px;font-size:9px">'+flow.history.map(function(h){return(h.ans?'Sim':'Não');}).join(' → ')+'</div>':'')
+    +'</div>';
+}
+
+// Inline flow actions
+function startInlineFlow(key){
+  var parts=key.split('|||');var prog=parts[0],alvo=parts[1]||'';
+  var p=cprogs().find(function(x){return x.programa===prog&&x.alvo===alvo;});
+  if(!p)return;
+  if(!S.flows)S.flows={};
+  S.flows['flow_'+key]={step:'trend_up',history:[],sess:p.sess,crit:p.crit||80};
+  rv();
+}
+function answerInline(key,ans){
+  if(!S.flows)S.flows={};
+  var flow=S.flows['flow_'+key];if(!flow)return;
+  var step=FLOW_STEPS.find(function(s){return s.id===flow.step;});if(!step)return;
+  flow.history.push({id:step.id,q:step.q,ans:ans});
+  flow.step=ans?step.yes:step.no;
+  rv();
+}
+function saveInlineFlow(key,decKey){
+  var safKey=key.replace(/[^a-zA-Z0-9]/g,'_');
+  var just=gi('flJust-'+safKey)?gi('flJust-'+safKey).value:'';
+  var act=gi('flAct-'+safKey)?gi('flAct-'+safKey).value:'';
+  var parts=key.split('|||');var prog=parts[0],alvo=parts[1]||'';
+  var p=cprogs().find(function(x){return x.programa===prog&&x.alvo===alvo;});
+  if(p){p.notes=(p.notes?p.notes+'\n':'')+new Date().toLocaleDateString('pt-BR')+' ['+TERMS[decKey].label+']: '+(just||'')+(act?' → '+act:'');}
+  toast('✓ '+TERMS[decKey].label+' registrado.');
+  if(S.flows)delete S.flows['flow_'+key];
+  persist();rv();
+}
+function resetInlineFlow(key){if(S.flows)delete S.flows['flow_'+key];rv();}
+function openFlowFor(key){startInlineFlow(key);S.openCards[key]=true;rv();}
+function openNoteFor(key){S.openCards[key]=true;rv();setTimeout(function(){var safKey=key.replace(/[^a-zA-Z0-9]/g,'_');var el=gi('note-'+safKey);if(el){el.scrollIntoView({behavior:'smooth'});el.focus();}},100);}
+function saveNote(key){
+  var safKey=key.replace(/[^a-zA-Z0-9]/g,'_');
+  var el=gi('note-'+safKey);if(!el)return;
+  var parts=key.split('|||');var prog=parts[0],alvo=parts[1]||'';
+  var p=cprogs().find(function(x){return x.programa===prog&&x.alvo===alvo;});
+  if(p){p.notes=el.value;persist();toast('Nota salva.');}
+}
+
+function saveStatus(key,val){
+  var parts=key.split('|||');var prog=parts[0],alvo=parts[1]||'';
+  var p=cprogs().find(function(x){return x.programa===prog&&x.alvo===alvo;});
+  if(p){p.status=val;persist();}
+}
+function flowSuggest(sid,vals,crit){
+  if(!vals||vals.length<3)return null;
+  var last3=vals.slice(-3),last10=vals.slice(-10);
+  var avg10=last10.reduce(function(a,b){return a+b;},0)/last10.length;
+  var slope=(vals[vals.length-1]-vals[0])/(vals.length-1||1);
+  var range=Math.max.apply(null,vals)-Math.min.apply(null,vals);
+  if(sid==='trend_up')return slope>1.5?'+'+slope.toFixed(1)+'%/sessão ('+vals[0]+'%→'+vals[vals.length-1]+'%)':'slope '+slope.toFixed(1)+', sem ascensão';
+  if(sid==='last3_crit')return last3.every(function(v){return v>=crit;})?last3.join(', ')+'% ≥ '+crit+'% ✓':last3.join(', ')+'% (abaixo do critério)';
+  if(sid==='trend_down')return slope<-1.5?'Queda de '+Math.abs(slope).toFixed(1)+'%/sessão':'Sem queda consistente';
+  if(sid==='variable')return range>25?'Amplitude '+range.toFixed(0)+'% ('+Math.min.apply(null,vals)+'–'+Math.max.apply(null,vals)+'%)':'Amplitude '+range.toFixed(0)+'% (estável)';
+  if(sid==='flat')return Math.abs(slope)<1&&range<20?'Slope '+slope.toFixed(1)+', amplitude '+range.toFixed(0)+'%':'Ainda há variação';
+  if(sid==='last10_50')return avg10<=50?'Média '+avg10.toFixed(0)+'% ≤ 50%':'Média '+avg10.toFixed(0)+'%';
+  return null;
+}
+
+// Draw canvas chart after render
+function drawCharts(){
+  cprogs().forEach(function(p){
+    var key=esc(p.programa+'|||'+p.alvo);
+    if(!S.openCards[key])return;
+    var safKey=key.replace(/[^a-zA-Z0-9]/g,'_');
+    var canvas=gi('chart-'+safKey);
+    if(!canvas||!canvas.getContext)return;
+    drawCanvas(canvas,p);
+  });
+}
+
+function drawCanvas(canvas,p){
+  var ctx=canvas.getContext('2d');
+  var vals=p.sess.map(function(s){return s.v;});
+  if(!vals.length)return;
+  var W=canvas.parentElement.offsetWidth||500;
+  var LEGEND_H=22; // space at bottom for phase legend
+  var H=110+LEGEND_H;
+  canvas.width=W;canvas.height=H;
+  var pad={t:10,r:10,b:LEGEND_H+16,l:30};
+  var cw=W-pad.l-pad.r, ch=H-pad.t-pad.b;
+  var maxV=100; var minV=0; var range=100;
+  var xS=function(i){return pad.l+(i/(vals.length-1||1))*cw;};
+  var yS=function(v){return pad.t+ch-((v-minV)/range*ch);};
+  var lv=vals[vals.length-1];
+  var crit=p.crit||90;var rgb=lv>=crit?'26,102,64':lv>=50?'138,79,8':'138,31,31';
+
+  // Background grid lines (horizontal)
+  var steps=[0,25,50,75,100];
+  steps.forEach(function(sv){
+    var gy=yS(sv);
+    ctx.strokeStyle='rgba(0,0,0,0.06)';ctx.lineWidth=0.5;ctx.setLineDash([]);
+    ctx.beginPath();ctx.moveTo(pad.l,gy);ctx.lineTo(pad.l+cw,gy);ctx.stroke();
+    ctx.fillStyle='#C4C1BB';ctx.font='8px Inter,sans-serif';ctx.textAlign='right';
+    ctx.fillText(sv+'%',pad.l-4,gy+3);
+  });
+  ctx.textAlign='left';
+
+  // Criterion line — bold, above gridlines
+  if(crit){var _crit=crit;
+    var cy=yS(_crit);
+    ctx.strokeStyle='rgba(138,79,8,0.35)';ctx.lineWidth=1.2;ctx.setLineDash([5,3]);
+    ctx.beginPath();ctx.moveTo(pad.l,cy);ctx.lineTo(pad.l+cw,cy);ctx.stroke();
+    ctx.setLineDash([]);
+    // Crit label on right side
+    ctx.fillStyle='#8A4F08';ctx.font='bold 8px Inter,sans-serif';ctx.textAlign='right';
+    ctx.fillText('critério '+_crit+'%',pad.l+cw,cy-3);
+    ctx.textAlign='left';
+  }
+
+  // Phase sections — colored background bands
+  var sections=phaseSections(p.sess);
+  var phBg={'LB':'rgba(155,152,144,0.08)','Inter.':'rgba(23,74,130,0.06)','Manut.':'rgba(26,102,64,0.06)','Gener.':'rgba(74,32,128,0.06)'};
+  var phFg={'LB':'#9B9890','Inter.':'#174A82','Manut.':'#1A6640','Gener.':'#4A2080'};
+  var cumIdx=0;
+  sections.forEach(function(sec,si){
+    var x0=xS(cumIdx);
+    var x1=si<sections.length-1?xS(cumIdx+sec.sessions.length-0.5):pad.l+cw;
+    // Background band
+    ctx.fillStyle=phBg[sec.phase]||'rgba(0,0,0,0.04)';
+    ctx.fillRect(x0,pad.t,x1-x0,ch);
+    // Phase separator line
+    if(si>0){
+      ctx.strokeStyle='rgba(0,0,0,0.12)';ctx.lineWidth=1;ctx.setLineDash([3,2]);
+      ctx.beginPath();ctx.moveTo(x0,pad.t);ctx.lineTo(x0,pad.t+ch);ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    cumIdx+=sec.sessions.length;
+  });
+
+  // Area gradient fill
+  var grad=ctx.createLinearGradient(0,pad.t,0,pad.t+ch);
+  grad.addColorStop(0,'rgba('+rgb+',.15)');grad.addColorStop(1,'rgba('+rgb+',0)');
+  ctx.fillStyle=grad;
+  ctx.beginPath();ctx.moveTo(xS(0),yS(minV));
+  vals.forEach(function(v,i){ctx.lineTo(xS(i),yS(v));});
+  ctx.lineTo(xS(vals.length-1),yS(minV));ctx.closePath();ctx.fill();
+
+  // Main line
+  ctx.strokeStyle='rgb('+rgb+')';ctx.lineWidth=2;ctx.lineJoin='round';ctx.lineCap='round';
+  ctx.beginPath();
+  vals.forEach(function(v,i){i===0?ctx.moveTo(xS(i),yS(v)):ctx.lineTo(xS(i),yS(v));});
+  ctx.stroke();
+
+  // Data points — show all if sparse, every N if dense
+  var step=Math.max(1,Math.ceil(vals.length/20));
+  vals.forEach(function(v,i){
+    if(i===0||i===vals.length-1||i%step===0){
+      ctx.fillStyle='rgb('+rgb+')';
+      ctx.beginPath();ctx.arc(xS(i),yS(v),i===vals.length-1?3.5:2.5,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#fff';
+      ctx.beginPath();ctx.arc(xS(i),yS(v),i===vals.length-1?1.8:1.2,0,Math.PI*2);ctx.fill();
+    }
+  });
+
+  // Last value label (prominent)
+  var lvx=xS(vals.length-1),lvy=yS(lv);
+  ctx.fillStyle='rgb('+rgb+')';ctx.font='bold 9px JetBrains Mono,monospace';
+  var lvLabel=lv+(p.tipo==='Taxa'?'r/m':'%');
+  var labelX=lvx+6;if(labelX+24>pad.l+cw)labelX=lvx-28;
+  ctx.fillText(lvLabel,labelX,lvy+3);
+
+  // X-axis date labels
+  ctx.fillStyle='#9B9890';ctx.font='8px Inter,sans-serif';ctx.textAlign='left';
+  ctx.fillText(p.sess[0].d.substring(0,5),pad.l,H-LEGEND_H+4);
+  if(vals.length>1){
+    ctx.textAlign='right';
+    ctx.fillText(p.sess[vals.length-1].d.substring(0,5),pad.l+cw,H-LEGEND_H+4);
+  }
+  ctx.textAlign='left';
+
+  // Phase legend at very bottom — colored squares + labels
+  var legendY=H-8;
+  var legendX=pad.l;
+  var shownPhases={};
+  sections.forEach(function(s){shownPhases[s.phase]=true;});
+  Object.keys(shownPhases).forEach(function(ph){
+    var col=phFg[ph]||'#9B9890';
+    ctx.fillStyle=col;ctx.fillRect(legendX,legendY-6,7,7);
+    ctx.fillStyle='#9B9890';ctx.font='8px Inter,sans-serif';ctx.textAlign='left';
+    ctx.fillText(ph,legendX+9,legendY);
+    legendX+=ctx.measureText(ph).width+22;
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// VIEW: PARA OS PAIS
+// ══════════════════════════════════════════════════════
+function vPais(){
+  var cli=cl(), ps=cprogs(), grupos=groupByProg(ps);
+  var notas_aba=cnotas().filter(function(n){return n.srv&&n.srv.toUpperCase().includes('ABA')&&n.reg;});
+  if(!ps.length){
+    return'<div style="text-align:center;padding:48px 24px"><div style="font-size:28px;margin-bottom:12px;opacity:.25">👨‍👩‍👧</div><p class="muted">Importe o XLSX do cliente para gerar o resumo para os pais.</p></div>';
+  }
+
+  // Sort programs: going well first, then needs work
+  var bem=[], mais=[];
+  grupos.forEach(function(g){
+    var aggVals=progAggVals(g.alvos);
+    var aggSess=aggVals.map(function(v){return{v:v,et:'Inter.'};});
+    var dec=autoDecide(aggSess,g.alvos[0].crit||90);
+    var anyFinalizado=g.alvos.some(function(a){return a.status==='finalizado';});
+    var anyMaiorFase=g.alvos.some(function(a){var ph=currentPhase(a.sess);return ph==='Manut.'||ph==='Gener.';});
+    if(dec==='CONCLUIDO'||anyFinalizado||(dec==='MANTER'&&anyMaiorFase)) bem.push(g);
+    else mais.push(g);
+  });
+
+  function progSummaryText(g){
+    // Build default text for one program, mentioning alvo performance
+    var lines=[];
+    var namedAlvos=g.alvos.filter(function(a){return a.alvo&&a.alvo!=='';});
+    var hasMaster=namedAlvos.filter(function(a){var v=a.sess.length?a.sess[a.sess.length-1].v:0;return v>=(a.crit||90);});
+    var inProg=namedAlvos.filter(function(a){var v=a.sess.length?a.sess[a.sess.length-1].v:0;return v<(a.crit||90);});
+    if(hasMaster.length){
+      lines.push('Já domina: '+hasMaster.map(function(a){return a.alvo;}).join(', ')+'.');
+    }
+    if(inProg.length){
+      var pcts=inProg.map(function(a){var v=a.sess.length?a.sess[a.sess.length-1].v:0;return a.alvo+' ('+v+'%)';});
+      lines.push('Em treino: '+pcts.join(', ')+'.');
+    }
+    if(!namedAlvos.length&&g.alvos.length){
+      var v=g.alvos[0].sess.length?g.alvos[0].sess[g.alvos[0].sess.length-1].v:0;
+      lines.push('Desempenho atual: '+v+'%.');
+    }
+    return lines.join(' ');
+  }
+
+  var html='<div style="max-width:680px">';
+  html+='<div class="sec-title">Para os Pais — '+cli.code+'</div>';
+  html+='<p class="muted mb16" style="line-height:1.7">Resumo do progresso em linguagem acessível. O supervisor pode editar cada seção antes de compartilhar.</p>';
+
+  // Intro card
+  var introKey='pais_intro_'+S.cid;
+  var introDefault='Seu filho(a) está em atendimento com foco em '+grupos.length+' área'+(grupos.length>1?'s':'')+' de habilidade. Abaixo você encontra um resumo do que está sendo trabalhado, o que já está indo bem e o que ainda precisa de mais atenção.';
+  var introVal=(S.paisTexts&&S.paisTexts[introKey])||introDefault;
+  html+=paisCard('intro','Contexto geral',introVal,'var(--bl)');
+
+  // Going well
+  if(bem.length){
+    var bemParts=bem.map(function(g){
+      var saved=(S.paisTexts&&S.paisTexts['pais_prog_bem_'+S.cid+'_'+g.programa]);
+      if(saved)return'<p><strong>'+g.programa+'</strong>: '+saved+'</p>';
+      return'<p><strong>'+g.programa+'</strong>: '+progSummaryText(g)+'</p>';
+    }).join('');
+    html+=paisCard('bem','✓ O que está indo bem',bemParts,'var(--g)');
+  }
+
+  // Needs more work
+  if(mais.length){
+    var maisParts=mais.map(function(g){
+      var saved=(S.paisTexts&&S.paisTexts['pais_prog_mais_'+S.cid+'_'+g.programa]);
+      if(saved)return'<p><strong>'+g.programa+'</strong>: '+saved+'</p>';
+      var aggVals=progAggVals(g.alvos);
+      var aggSess=aggVals.map(function(v){return{v:v,et:'Inter.'};});
+      var dec=autoDecide(aggSess,g.alvos[0].crit||90);
+      var msg=dec==='MODIFICAR'?'estamos ajustando o procedimento para ajudar melhor':
+               dec==='DESCONTINUAR'?'estamos avaliando uma nova abordagem':'ainda está em desenvolvimento';
+      return'<p><strong>'+g.programa+'</strong>: '+progSummaryText(g)+' '+msg.charAt(0).toUpperCase()+msg.slice(1)+'.</p>';
+    }).join('');
+    html+=paisCard('mais','↻ O que ainda precisa de mais treino',maisParts,'var(--a)');
+  }
+
+  // Last ABA note
+  if(notas_aba.length){
+    var last=notas_aba[notas_aba.length-1];
+    html+='<div class="card mb12"><div class="card-hd"><div class="card-title">Última sessão</div><div class="card-sub">'+last.d+(last.ent?' · '+last.ent:'')+'</div></div>';
+    html+='<p style="font-size:13px;line-height:1.8;color:var(--ink2)">'+last.reg+'</p></div>';
+  }
+
+  html+='<div class="flex gap8 mb20">'
+    +'<button class="btn btn-dark btn-sm" onclick="gerarPaisIA()">✦ Gerar com IA</button>'
+    +'<button class="btn btn-sm" onclick="copiarPais()">↓ Copiar tudo</button>'
+    +'</div>';
+  html+='<div id="paisAIOut"></div></div>';
+  return html;
+}
+
+function paisCard(section, title, content, borderColor){
+  var viewId='paisView_'+section;
+  var editId='paisEdit_'+section;
+  var btnId='paisBtn_'+section;
+  var key='pais_'+section+'_'+S.cid;
+  return'<div class="card mb12" style="border-left:3px solid '+borderColor+'">'
+    +'<div class="card-hd"><div class="card-title" style="color:'+borderColor+'">'+title+'</div>'
+    +'<button class="btn btn-xs" data-sec="'+section+'" onclick="togglePaisEdit(this.dataset.sec)">✎ Editar</button></div>'
+    +'<div id="'+viewId+'" style="font-size:13px;line-height:1.9;color:var(--ink2)">'+content+'</div>'
+    +'<textarea id="'+editId+'" style="display:none;width:100%;font-size:13px;line-height:1.8;padding:8px;border:1px solid var(--b);border-radius:var(--rad);resize:vertical;min-height:100px;font-family:Inter,sans-serif">'+content.replace(/<[^>]+>/g,'').trim()+'</textarea>'
+    +'<div id="'+btnId+'" style="display:none;margin-top:8px"><button class="btn btn-xs btn-green" data-sec="'+section+'" onclick="savePaisText(this.dataset.sec)">Salvar</button></div>'
+    +'</div>';
+}
+
+
+function togglePaisEdit(section){
+  var view=gi('paisView_'+section);
+  var edit=gi('paisEdit_'+section);
+  var btn=gi('paisBtn_'+section);
+  if(!view||!edit)return;
+  var showing=edit.style.display!=='none';
+  view.style.display=showing?'block':'none';
+  edit.style.display=showing?'none':'block';
+  if(btn)btn.style.display=showing?'none':'block';
+  if(!showing)edit.value=view.innerHTML.replace(/<p>/g,'').replace(/<\/p>/g,'\n').replace(/<br>/g,'\n').replace(/<[^>]+>/g,'').trim();
+}
+
+function savePaisText(section){
+  var edit=gi('paisEdit_'+section);
+  var view=gi('paisView_'+section);
+  var btn=gi('paisBtn_'+section);
+  if(!edit||!view)return;
+  var key='pais_'+section+'_'+S.cid;
+  if(!S.paisTexts)S.paisTexts={};
+  var val=edit.value.replace(/\n/g,'<br>');
+  S.paisTexts[key]=val;
+  try{localStorage.setItem('aba_pais',JSON.stringify(S.paisTexts));}catch(e){}
+  view.innerHTML=val;
+  view.style.display='block';edit.style.display='none';
+  if(btn)btn.style.display='none';
+  toast('Texto salvo.');
+}
+
+function copyPaisAI(){var el=gi('paisAITxt');if(el)navigator.clipboard.writeText(el.textContent).then(function(){toast('Copiado!');});}
+async function gerarPaisIA(){
+  var c=cl(),ps=cprogs(),grupos=groupByProg(ps);
+  var notas_aba=cnotas().filter(function(n){return n.srv&&n.srv.toUpperCase().includes('ABA')&&n.reg;}).slice(-5);
+  gi('paisAIOut').innerHTML='<div class="card"><div class="dots"><span></span><span></span><span></span></div></div>';
+  var sum=ps.map(function(a){
+    var vals=a.sess.map(function(s){return s.v;});var dec=autoDecide(a.sess,a.crit);var T=TERMS[dec]||TERMS.MANTER;
+    return a.programa+(a.alvo?' → '+a.alvo:'')+': '+vals.slice(-3).join(',')+' % | '+T.label+' | fase: '+currentPhase(a.sess);
+  }).join('\n');
+  var notasS=notas_aba.map(function(n){return n.d+': '+n.reg.substring(0,100);}).join('\n');
+  try{
+    var resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:700,messages:[{role:'user',content:
+        'Você é BCBA. Escreva um resumo de progresso para os PAIS em linguagem simples, acolhedora e positiva, evitando jargões técnicos. Foco em: o que o filho está aprendendo, o que já consegue fazer com mais independência, o que ainda estamos trabalhando. Parágrafos curtos. Máximo 300 palavras.\n\nCliente: '+c.code+'\nProgresso dos programas:\n'+sum+'\n\nNotas recentes:\n'+notasS}]})});
+    var data=await resp.json();var text=data.content&&data.content[0]?data.content[0].text:'Erro.';
+    gi('paisAIOut').innerHTML='<div class="card"><div class="card-hd"><div class="card-title">Texto gerado pela IA</div><button class="btn btn-xs" onclick="copyPaisAI()">Copiar</button></div><div id="paisAITxt" style="font-size:13px;line-height:1.9;color:var(--ink2);white-space:pre-wrap">'+text+'</div></div>';
+  }catch(e){gi('paisAIOut').innerHTML='<div class="card"><p style="color:var(--r)">Erro: '+e.message+'</p></div>';}
+}
+
+function copiarPais(){
+  var parts=['intro','bem','mais'].map(function(s){
+    var el=gi('paisView_'+s);
+    return el?el.textContent.trim():'';
+  }).filter(Boolean).join('\n\n');
+  navigator.clipboard.writeText(parts).then(function(){toast('Copiado!');});
+}
+
+// ══════════════════════════════════════════════════════
+// VIEW: NOTAS
+// ══════════════════════════════════════════════════════
+function vNotas(){
+  var notas=cnotas().filter(function(n){return n.d;});
+  var fSrv=S._notaSrv||'',fPres=S._notaPres||'';
+  var filtered=notas.filter(function(n){
+    if(fSrv&&!(n.srv||'').toUpperCase().includes(fSrv.toUpperCase()))return false;
+    if(fPres&&n.presTag!==fPres)return false;
+    return true;
+  });
+  var srvs=[...new Set(notas.map(function(n){return n.srv||'';}))].filter(Boolean).sort();
+  return'<div style="max-width:860px">'
+    +'<div class="sec-title">Notas de Sessão - '+cl().code+'</div>'
+    +'<div class="fbar mb12">'
+    +srvs.map(function(s){return'<button class="btn btn-xs '+(fSrv===s?'btn-dark':'')+'" onclick="S._notaSrv=\''+(fSrv===s?'':s)+'\';rv()">'+s+'</button>';}).join('')
+    +'<div style="width:1px;height:14px;background:var(--b);margin:0 3px"></div>'
+    +'<button class="btn btn-xs '+(fPres===''?'btn-dark':'')+'" onclick="S._notaPres=\'\';rv()">Todos</button>'
+    +'<button class="btn btn-xs" style="'+(fPres==='presenca'?'background:var(--g2);color:var(--g);border-color:var(--g3)':'')+'" onclick="S._notaPres=\'presenca\';rv()">✓ Presença</button>'
+    +'<button class="btn btn-xs" style="'+(fPres==='falta'?'background:var(--r2);color:var(--r);border-color:var(--r3)':'')+'" onclick="S._notaPres=\'falta\';rv()">✗ Falta</button>'
+    +'<button class="btn btn-xs" style="'+(fPres==='cancelado'?'background:var(--a2);color:var(--a);border-color:var(--a3)':'')+'" onclick="S._notaPres=\'cancelado\';rv()">- Cancelado</button>'
+    +'<span class="muted" style="margin-left:auto">'+filtered.length+' registros</span>'
+    +'</div>'
+    +filtered.slice().reverse().map(function(n){
+      var presHtml='';
+      if(n.presTag==='falta')presHtml='<span class="badge bg-r" style="font-size:9px">✗ Falta</span>';
+      else if(n.presTag==='cancelado')presHtml='<span class="badge bg-a" style="font-size:9px">- Cancelado</span>';
+      return'<div class="nota"><div class="nota-hd"><span class="nota-srv '+srvClass(n.srv)+'">'+n.srv+'</span><span class="nota-date">'+n.d+'</span>'+(n.ent?'<span class="nota-time">'+n.ent+(n.sai?' – '+n.sai:'')+'</span>':'')+(presHtml||'')+'</div>'
+        +(n.reg?'<div class="nota-txt">'+n.reg+'</div>'
+         :n.presTag==='falta'?'<div class="nota-absent">Sessão não realizada - falta</div>'
+         :n.presTag==='cancelado'?'<div class="nota-absent">Sessão cancelada</div>'
+         :'<div class="nota-absent">Sem registro de sessão</div>')+'</div>';
+    }).join('')+'</div>';
+}
+
+// ══════════════════════════════════════════════════════
+// VIEW: IOA
+// ══════════════════════════════════════════════════════
+function vIOA(){
+  var ioaRecs=cioa(),integRecs=cinteg();
+  var grupos=groupByProg(cprogs());
+  var progOpts='<option value="">-</option>'+grupos.map(function(g){return'<option>'+g.programa+'</option>';}).join('');
+  return'<div style="max-width:880px"><div class="sec-title">IOA e Integridade de Tratamento</div>'
+    +'<div class="g2">'
+    // IOA panel
+    +'<div>'
+    +'<div class="card mb12"><div class="card-hd"><div><div class="card-title">Acordo entre Observadores (IOA)</div><div class="card-sub">Cooper, Heron & Heward (2019) - mínimo 20% das sessões</div></div><button class="btn btn-xs btn-green" onclick="gi(\'ioaForm\').style.display=\'block\'">+ Registro</button></div>'
+    +'<div class="muted mb12">Métodos: contagem total (menor/maior×100) ou tentativa a tentativa.</div>'
+    +ioaRecs.map(function(r){var cls=r.pct>=80?'score-ok':r.pct>=60?'score-warn':'score-bad';return'<div style="border:1px solid var(--b);border-radius:var(--rad);padding:10px;margin-bottom:7px"><div class="flex jb aic mb8"><div><strong style="font-size:12px">'+r.programa+'</strong>'+(r.alvo?' → '+r.alvo:'')+'<div class="muted">'+r.data+' · '+r.metodo+' · '+r.obs1+' × '+r.obs2+'</div></div><div class="flex aic gap8"><div class="ioa-score '+cls+'">'+r.pct+'%</div><button class="btn btn-xs" onclick="S.ioa=S.ioa.filter(function(x){return x.id!=='+r.id+'});persist();rv()">×</button></div></div>'+(r.trials?'<div class="trial-grid">'+r.trials.map(function(t){return'<div class="trial-cell '+(t[0]===t[1]?'tc-agree':'tc-disagree')+'" title="Obs1:'+t[0]+' Obs2:'+t[1]+'">'+t[0]+'</div>';}).join('')+'</div>':'')+'</div>';}).join('')
+    +(ioaRecs.length===0?'<p class="muted" style="text-align:center;padding:16px;font-size:11px">Nenhum registro. Clique em + Registro.</p>':'')
+    +'</div>'
+    // IOA form
+    +'<div id="ioaForm" style="display:none" class="card mb12"><div class="card-hd"><div class="card-title">Novo registro de IOA</div><button class="btn btn-xs" onclick="gi(\'ioaForm\').style.display=\'none\'">×</button></div>'
+    +'<div class="g2"><div class="field"><label>Programa</label><select class="fs" id="ioaProg">'+progOpts+'</select></div><div class="field"><label>Data</label><input class="fi" type="date" id="ioaData" value="'+new Date().toISOString().split("T")[0]+'"></div></div>'
+    +'<div class="g2"><div class="field"><label>Observador 1</label><input class="fi" id="ioaO1" placeholder="Nome"></div><div class="field"><label>Observador 2</label><input class="fi" id="ioaO2" placeholder="Nome"></div></div>'
+    +'<div class="field"><label>Método</label><select class="fs" id="ioaMet"><option>Contagem total</option><option>Tentativa por tentativa</option><option>Intervalo por intervalo</option></select></div>'
+    +'<div class="g2"><div class="field"><label>Dados obs. 1 (número ou ex: IND,AT,AT,IND)</label><input class="fi mono" id="ioaD1" placeholder="Ex: 18 ou IND,AT,AT,IND"></div><div class="field"><label>Dados obs. 2</label><input class="fi mono" id="ioaD2" placeholder="Ex: 17 ou IND,AT,IND,IND"></div></div>'
+    +'<button class="btn btn-xs btn-green" onclick="calcIOA()">Calcular e salvar</button><div id="ioaRes" class="mt8"></div></div>'
+    +'</div>'
+    // Integridade panel
+    +'<div>'
+    +'<div class="card mb12"><div class="card-hd"><div><div class="card-title">Integridade de Tratamento</div><div class="card-sub">% de passos implementados corretamente</div></div><button class="btn btn-xs btn-green" onclick="gi(\'integForm\').style.display=\'block\'">+ Registro</button></div>'
+    +integRecs.map(function(r){var cls=r.pct>=80?'score-ok':r.pct>=60?'score-warn':'score-bad';return'<div style="border:1px solid var(--b);border-radius:var(--rad);padding:10px;margin-bottom:7px"><div class="flex jb aic mb8"><div><strong style="font-size:12px">'+r.programa+'</strong><div class="muted">'+r.data+' · '+r.aplicador+'</div></div><div class="flex aic gap8"><div class="ioa-score '+cls+'">'+r.pct+'%</div><button class="btn btn-xs" onclick="S.integ=S.integ.filter(function(x){return x.id!=='+r.id+'});persist();rv()">×</button></div></div><div class="pbar"><div class="pbar-f" style="width:'+r.pct+'%;background:'+(r.pct>=80?'var(--g)':r.pct>=60?'var(--a)':'var(--r)')+'"></div></div>'+(r.obs?'<div class="muted mt6">'+r.obs+'</div>':'')+'</div>';}).join('')
+    +(integRecs.length===0?'<p class="muted" style="text-align:center;padding:16px;font-size:11px">Nenhum registro.</p>':'')
+    +'</div>'
+    // Integridade form
+    +'<div id="integForm" style="display:none" class="card"><div class="card-hd"><div class="card-title">Novo registro de Integridade</div><button class="btn btn-xs" onclick="gi(\'integForm\').style.display=\'none\'">×</button></div>'
+    +'<div class="g2"><div class="field"><label>Programa</label><select class="fs" id="intProg">'+progOpts+'</select></div><div class="field"><label>Aplicador</label><input class="fi" id="intAplic" placeholder="Nome"></div></div>'
+    +'<div class="g2"><div class="field"><label>Passos corretos</label><input class="fi mono" id="intC" placeholder="Ex: 8"></div><div class="field"><label>Total de passos (vazio = %)</label><input class="fi mono" id="intT" placeholder="Ex: 10"></div></div>'
+    +'<div class="field"><label>Data</label><input class="fi" type="date" id="intData" value="'+new Date().toISOString().split("T")[0]+'"></div>'
+    +'<div class="field"><label>Observações</label><input class="fi" id="intObs" placeholder="Passos não realizados, contexto..."></div>'
+    +'<button class="btn btn-xs btn-green" onclick="saveInteg()">Salvar</button></div>'
+    +'</div>'
+    +'</div></div>';
+}
+
+function calcIOA(){
+  var prog=gi('ioaProg')?gi('ioaProg').value:'';var data=gi('ioaData')?gi('ioaData').value:'';
+  var o1=gi('ioaO1')?gi('ioaO1').value.trim():'Obs1';var o2=gi('ioaO2')?gi('ioaO2').value.trim():'Obs2';
+  var met=gi('ioaMet')?gi('ioaMet').value:'Contagem total';
+  var d1=gi('ioaD1')?gi('ioaD1').value.trim():'';var d2=gi('ioaD2')?gi('ioaD2').value.trim():'';
+  if(!d1||!d2){toast('Insira os dados dos dois observadores.');return;}
+  var pct=0,trials=null;
+  if(d1.includes(',')){var t1=d1.split(',').map(function(s){return s.trim().toUpperCase();});var t2=d2.split(',').map(function(s){return s.trim().toUpperCase();});var n=Math.min(t1.length,t2.length);var ag=0;trials=[];for(var i=0;i<n;i++){if(t1[i]===t2[i])ag++;trials.push([t1[i],t2[i]]);}pct=Math.round(ag/n*100);}
+  else{var n1=safeN(d1),n2=safeN(d2);if(!n1||!n2){toast('Formato inválido.');return;}pct=Math.round(Math.min(n1,n2)/Math.max(n1,n2)*100);}
+  S.ioa.push({id:Date.now(),cid:S.cid,programa:prog,alvo:'',data:data.split('-').reverse().join('/'),obs1:o1,obs2:o2,metodo:met,pct:pct,trials:trials});
+  persist();toast('IOA: '+pct+'%'+(pct>=80?' ✓':pct>=60?' ⚠':' ✗'));
+  gi('ioaForm').style.display='none';rv();
+}
+
+function saveInteg(){
+  var prog=gi('intProg')?gi('intProg').value:'';var aplic=gi('intAplic')?gi('intAplic').value.trim():'';
+  var data=gi('intData')?gi('intData').value:'';var c=safeN(gi('intC')?gi('intC').value:'');var t=safeN(gi('intT')?gi('intT').value:'');
+  var obs=gi('intObs')?gi('intObs').value.trim():'';
+  if(c===null){toast('Insira os dados.');return;}
+  var pct=t?Math.round(c/t*100):Math.round(c);
+  S.integ.push({id:Date.now(),cid:S.cid,programa:prog,aplicador:aplic,data:data.split('-').reverse().join('/'),pct:pct,obs:obs});
+  persist();toast('Integridade: '+pct+'%');gi('integForm').style.display='none';rv();
+}
+
+// ══════════════════════════════════════════════════════
+// VIEW: CHECKLIST
+// ══════════════════════════════════════════════════════
+function vSupervisao(){
+  var ck=S.checklist;var all=[].concat(ck.pre,ck.during,ck.post);
+  var done=all.filter(function(i){return i.done;}).length;var pct=Math.round(done/all.length*100);
+  return'<div style="max-width:840px"><div class="sec-title">Checklist de Supervisão Direta</div>'
+    +'<div class="flex aic gap12 mb14"><div style="flex:1"><div class="pbar"><div class="pbar-f" style="width:'+pct+'%;background:'+(pct===100?'var(--g)':'var(--ink)')+'"></div></div></div>'
+    +'<span class="mono muted">'+done+'/'+all.length+'</span>'
+    +'<button class="btn btn-xs" onclick="ckReset()">Reiniciar</button>'
+    +'<button class="btn btn-xs" onclick="ckExport()">↓ CSV</button></div>'
+    +'<div class="g3">'+['pre','during','post'].map(function(grp){
+      var lbl={pre:'Pré-supervisão',during:'Durante',post:'Pós-supervisão'}[grp];
+      var items=ck[grp];var dn=items.filter(function(i){return i.done;}).length;
+      return'<div class="card card-sm"><div class="card-hd" style="margin-bottom:10px"><div><div class="card-title">'+lbl+'</div><div class="card-sub">'+dn+'/'+items.length+'</div></div><span class="badge '+(dn===items.length?'bg-g':'bg-n')+'" style="font-size:9px">'+(dn===items.length?'✓ Completo':'Pendente')+'</span></div>'
+        +items.map(function(item){return'<div class="ck-item '+(item.done?'done':'')+'" onclick="ckToggle(\''+grp+'\',\''+item.id+'\')">'
+          +'<div class="ck-box '+(item.done?'on':'')+'">'+(item.done?'<svg width="8" height="6" viewBox="0 0 8 6"><path d="M1 3l2 2 4-4" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>':'')+'</div>'
+          +'<span class="ck-text">'+item.t+'</span></div>';}).join('')+'</div>';
+    }).join('')+'</div></div>';
+}
+function ckToggle(g,id){var it=S.checklist[g].find(function(i){return i.id===id;});if(it){it.done=!it.done;persist();rv();}}
+function ckReset(){Object.keys(S.checklist).forEach(function(g){S.checklist[g].forEach(function(i){i.done=false;});});persist();rv();}
+function ckExport(){var rows=[['Momento','Item','Concluído']];['pre','during','post'].forEach(function(g){var l={pre:'Pré',during:'Durante',post:'Pós'}[g];S.checklist[g].forEach(function(i){rows.push([l,i.t,i.done?'Sim':'']);});});var csv=rows.map(function(r){return r.map(function(c){return'"'+c+'"';}).join(',');}).join('\n');var a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv'}));a.download='checklist.csv';a.click();}
+
+// ══════════════════════════════════════════════════════
+// VIEW: RELATÓRIO
+// ══════════════════════════════════════════════════════
+function vRelatorio(){
+  var c=cl(),grupos=groupByProg(cprogs());
+  return'<div style="max-width:740px"><div class="sec-title">Relatório de Progresso / PTI-ABA</div>'
+    +'<div class="card mb12"><div class="card-hd"><div class="card-title">Informações</div></div>'
+    +'<div class="g2"><div class="field"><label>Nome completo do cliente</label><input class="fi" id="rNome" placeholder="Nome completo"></div><div class="field"><label>Período</label><input class="fi" id="rPer" value="'+new Date().getFullYear()+'"></div></div>'
+    +'<div class="g2"><div class="field"><label>Supervisor / BCBA</label><input class="fi" id="rSup" placeholder="Nome e CRP"></div><div class="field"><label>Data</label><input class="fi" id="rData" value="'+new Date().toLocaleDateString('pt-BR')+'"></div></div>'
+    +'<div class="field"><label>Contexto do período</label><textarea class="fta" id="rCtx" rows="3" placeholder="Carga horária, intercorrências, medicação, escola..."></textarea></div>'
+    +'<div class="flex gap8 aic"><button class="btn btn-dark btn-sm" onclick="gerarRel()">✦ Gerar com IA</button><button class="btn btn-sm" onclick="gerarRelLocal()">Texto simples</button>'
+    +'<span class="muted">'+grupos.length+' programas · '+cioa().length+' IOA · '+cinteg().length+' integridade</span></div></div>'
+    +'<div id="relOut"></div></div>';
+}
+
+async function gerarRel(){
+  var c=cl(),ps=cprogs(),grupos=groupByProg(ps);
+  var nome=gi('rNome')?gi('rNome').value:'';var per=gi('rPer')?gi('rPer').value:'';var sup=gi('rSup')?gi('rSup').value:'';var ctx=gi('rCtx')?gi('rCtx').value:'';
+  gi('relOut').innerHTML='<div class="card"><div class="dots"><span></span><span></span><span></span></div></div>';
+  var sum=grupos.map(function(g){return g.alvos.map(function(a){var vals=a.sess.map(function(s){return s.v;});var dec=autoDecide(a.sess,a.crit);var T=TERMS[dec]||TERMS.MANTER;var ph=currentPhase(a.sess);var st=a.status||'em_andamento';return'• ['+a.tipo+'] '+g.programa+' → '+(a.alvo||'?')+' | Fase: '+ph+' | '+vals.slice(-6).join(', ')+(a.tipo==='Taxa'?'r/m':'%')+' | Status: '+st+' | '+T.label+(a.notes?' | '+a.notes.substring(0,80):'');}).join('\n');}).join('\n');
+  var ioaS=cioa().map(function(r){return r.programa+': '+r.pct+'% ('+r.metodo+')';}).join(', ')||'?';
+  var intS=cinteg().map(function(r){return r.programa+': '+r.pct+'% ('+r.aplicador+')';}).join(', ')||'?';
+  var notasS=cnotas().filter(function(n){return n.reg;}).slice(-6).map(function(n){return n.d+'['+n.srv+']: '+n.reg.substring(0,100);}).join('\n');
+  try{
+    var resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:
+        'Você é BCBA. Redija relatório de progresso e PTI-ABA em português, linguagem clínica, para prontuário.\n\nEstrutura:\n1. Cabeçalho (cliente, período, supervisor)\n2. Descrição do desenvolvimento do período\n3. Objetivos individuais - por habilidade: status (Em andamento/Finalizado/Interrompido/Adicionado), análise dos dados com referência às fases (LB→Inter.→Manut.→Gener.), tendência e decisão clínica\n4. IOA e integridade: '+ioaS+' / '+intS+'\n5. Objetivos para o próximo período\n\nCLIENTE: '+(nome||c.code)+'\nPERÍODO: '+per+'\nSUPERVISOR: '+sup+'\nCONTEXTO: '+ctx+'\n\nPROGRAMAS:\n'+sum+'\n\nNOTAS RECENTES:\n'+notasS}]})});
+    var data=await resp.json();var text=data.content&&data.content[0]?data.content[0].text:'Erro.';
+    gi('relOut').innerHTML='<div class="card"><div class="card-hd"><div class="card-title">Relatório gerado</div><div class="flex gap6"><button class="btn btn-xs" onclick="document.execCommand(\'copy\');var el=gi(\'relTxt\');var r=document.createRange();r.selectNode(el);window.getSelection().removeAllRanges();window.getSelection().addRange(r);document.execCommand(\'copy\');toast(\'Copiado!\')">Copiar</button><button class="btn btn-xs" onclick="var a=document.createElement(\'a\');a.href=URL.createObjectURL(new Blob([gi(\'relTxt\').textContent],{type:\'text/plain\'}));a.download=\'relatorio.txt\';a.click()">↓ TXT</button></div></div><div id="relTxt" style="font-size:12.5px;line-height:1.9;color:var(--ink2);white-space:pre-wrap">'+text+'</div></div>';
+  }catch(e){gi('relOut').innerHTML='<div class="card"><p style="color:var(--r)">Erro: '+e.message+'</p></div>';}
+}
+
+function gerarRelLocal(){
+  var c=cl(),grupos=groupByProg(cprogs());
+  var txt='RELATÓRIO DE PROGRESSO E PTI-ABA\n'+c.code+' | '+(gi('rPer')?gi('rPer').value:'')+'\nSupervisor: '+(gi('rSup')?gi('rSup').value:'')+'\n\n';
+  grupos.forEach(function(g){
+    txt+='=== '+g.programa.toUpperCase()+' ===\n';
+    g.alvos.forEach(function(a){
+      var vals=a.sess.map(function(s){return s.v;});var dec=autoDecide(a.sess,a.crit);var T=TERMS[dec]||TERMS.MANTER;
+      var sections=phaseSections(a.sess);var ph=currentPhase(a.sess);
+      txt+='Alvo: '+(a.alvo||'?')+' ['+a.tipo+'] | Fase atual: '+ph+'\n';
+      txt+='Fases: '+sections.map(function(s){return s.phase+'('+s.sessions.length+'sess)';}).join('→')+'\n';
+      txt+='Dados recentes: '+vals.slice(-10).join(', ')+(a.tipo==='Taxa'?'r/m':'%')+'\n';
+      txt+='Status: '+(a.status||'Em andamento')+'\nDecisão: '+T.label+(a.notes?'\nNota: '+a.notes:'')+'\n\n';
+    });
+  });
+  if(cioa().length)txt+='IOA: '+cioa().map(function(r){return r.programa+' '+r.pct+'%';}).join(', ')+'\n';
+  if(cinteg().length)txt+='Integridade: '+cinteg().map(function(r){return r.programa+' '+r.pct+'%';}).join(', ')+'\n';
+  gi('relOut').innerHTML='<div class="card"><div class="card-hd"><div class="card-title">Texto estruturado</div><button class="btn btn-xs" onclick="var el=gi(\'relTxt\');navigator.clipboard.writeText(el.textContent).then(function(){toast(\'Copiado!\')})">Copiar</button></div><div id="relTxt" style="font-size:11.5px;line-height:1.9;white-space:pre-wrap;font-family:\'JetBrains Mono\',monospace;color:var(--ink2)">'+txt+'</div></div>';
+}
+
+// ══════════════════════════════════════════════════════
+// VIEW: IA
+// ══════════════════════════════════════════════════════
+function vIA(){
+  var c=cl(),ps=cprogs(),grupos=groupByProg(ps);
+  return'<div class="chat-frame"><div class="msgs" id="msgs">'
+    +'<div class="msg ai"><div class="mav">IA</div><div class="mbubble">'
+    +'<strong>Assistente</strong> - '+c.code+'<br><br>'
+    +'Tenho acesso a <strong>'+grupos.length+' programas / '+ps.length+' alvos</strong>, incluindo fases (LB/Inter./Manut./Gener.), '
+    +cioa().length+' registros de IOA, '+cinteg().length+' de integridade e '
+    +cnotas().filter(function(n){return n.reg;}).length+' notas de sessão.<br><br>'
+    +'O que você quer analisar?'
+    +'</div></div></div>'
+    +'<div class="chat-bar"><textarea class="chi" id="chi" rows="2" placeholder="Pergunte sobre programas, fases, IOA, relatório..." onkeydown="iaKey(event)"></textarea>'
+    +'<button class="btn btn-dark btn-sm" id="iaBt" onclick="sendIA()">Enviar</button></div></div>';
+}
+
+async function sendIA(forced){
+  var input=gi('chi');var text=forced||(input?input.value.trim():'');
+  if(!text)return;if(input&&!forced)input.value='';
+  appendMsg('me',text);var btn=gi('iaBt');if(btn)btn.disabled=true;var lid=appendLoading();
+  var c=cl(),ps=cprogs();
+  var sys='Você é BCBA, especializado em ABA com TEA. Responda em português. Clínico, preciso, prático.\n\nCLIENTE: '+c.code+(c.diag?' - '+c.diag:'')+'\n\nPROGRAMAS ('+ps.length+' alvos):\n'
+    +ps.map(function(p){var vals=p.sess.map(function(s){return s.v;});var dec=autoDecide(p.sess,p.crit);var ph=currentPhase(p.sess);var curVals=sessInCurrentPhase(p.sess).map(function(s){return s.v;});return'• ['+p.tipo+'] '+p.programa+' → '+(p.alvo||'?')+' | Fase: '+ph+' ('+curVals.length+' sess) | dados fase: '+curVals.slice(-8).join(','+(p.tipo==='Taxa'?'r/m':'%')+',')+(p.tipo==='Taxa'?'r/m':'%')+' | dec: '+(dec||'?');}).join('\n')
+    +'\n\nIOA: '+cioa().map(function(r){return r.programa+' '+r.pct+'%';}).join(', ')||'?'
+    +'\n\nNOTAS RECENTES:\n'+cnotas().filter(function(n){return n.reg;}).slice(-6).map(function(n){return n.d+'['+n.srv+']: '+n.reg.substring(0,100);}).join('\n');
+  try{
+    var resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:S.chat.slice(-8).concat([{role:'user',content:text}])})});
+    removeMsg(lid);if(!resp.ok)throw new Error('HTTP '+resp.status);
+    var data=await resp.json();var reply=data.content&&data.content[0]?data.content[0].text:'Sem resposta.';
+    S.chat.push({role:'user',content:text},{role:'assistant',content:reply});appendMsg('ai',reply);
+  }catch(e){removeMsg(lid);appendMsg('ai','Erro: '+e.message);}
+  if(btn)btn.disabled=false;
+}
+function sendIACtx(key){var parts=key.split('|||');var prog=parts[0],alvo=parts[1]||'';var p=cprogs().find(function(x){return x.programa===prog&&x.alvo===alvo;});if(!p)return;var vals=sessInCurrentPhase(p.sess).map(function(s){return s.v;});var ph=currentPhase(p.sess);sendIA('Analise o alvo "'+p.alvo+'" do programa "'+p.programa+'" ['+p.tipo+']. Fase atual: '+ph+'. Dados da fase: '+vals.join(', ')+(p.tipo!=='Taxa'?'%':'r/m')+'. Qual a decisão e que modificações específicas recomenda?');}
+function appendMsg(role,text){var c=gi('msgs');if(!c)return;var d=document.createElement('div');d.className='msg '+role;d.innerHTML='<div class="mav">'+(role==='me'?'EU':'IA')+'</div><div class="mbubble">'+text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')+'</div>';c.appendChild(d);c.scrollTop=c.scrollHeight;}
+function appendLoading(){var c=gi('msgs');if(!c)return null;var id='ld'+Date.now(),d=document.createElement('div');d.className='msg ai';d.id=id;d.innerHTML='<div class="mav">IA</div><div class="mbubble"><div class="dots"><span></span><span></span><span></span></div></div>';c.appendChild(d);c.scrollTop=c.scrollHeight;return id;}
+function removeMsg(id){if(id)document.getElementById(id)&&document.getElementById(id).remove();}
+function iaKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendIA();}}
+
+// ══════════════════════════════════════════════════════
+// EXPORT CSV
+// ══════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+// GOOGLE DRIVE SYNC — OAuth2 + Drive REST API
+// Root folder: 1a6fdGnj5zy9k_QNMsXaIfdYu5Ngw78HZ
+// ══════════════════════════════════════════════════════
+var _driveToken = null;
+var _driveExpiry = 0;
+var DRIVE_ROOT_ID = '1a6fdGnj5zy9k_QNMsXaIfdYu5Ngw78HZ';
+
+function openDriveSync(){
+  gi('driveModal').style.display='flex';
+  var lbl=gi('driveFolderLabel');if(lbl)lbl.textContent='3. Intervenção individual';
+  gi('driveSearch').value=cl().code.replace(/\./g,' ').trim();
+  gi('driveResults').innerHTML='';
+}
+
+// ── OAuth implicit flow ─────────────────────────────────
+function driveNeedsAuth(){ return !_driveToken||Date.now()>_driveExpiry; }
+
+function driveAuth(cb){
+  if(!driveNeedsAuth()){cb&&cb();return;}
+  var cid=S.driveClientId||localStorage.getItem('aba_gcid')||'';
+  if(!cid){
+    driveAskClientId(cb);return;
+  }
+  driveOAuthPopup(cid,cb);
+}
+
+function driveAskClientId(cb){
+  // Show inline form instead of prompt()
+  var modal=gi('driveModal');
+  var prev=gi('driveResults').innerHTML;
+  gi('driveResults').innerHTML=
+    '<div style="padding:12px;background:var(--surf2);border-radius:var(--rad);border:1px solid var(--b)">'
+    +'<div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:8px">Conectar Google Drive</div>'
+    +'<p style="font-size:11.5px;color:var(--ink2);line-height:1.7;margin-bottom:10px">'
+    +'Para baixar arquivos xlsx do Drive, preciso de um OAuth Client ID. '
+    +'Crie em <a href="https://console.cloud.google.com" target="_blank" style="color:var(--bl)">console.cloud.google.com</a> → '
+    +'APIs → Credenciais → Criar → ID OAuth → Aplicativo Web.</p>'
+    +'<input class="fi" id="gcidInput" placeholder="Cole o Client ID aqui (termina em .apps.googleusercontent.com)" style="font-size:11px;margin-bottom:8px">'
+    +'<div class="flex gap6">'
+    +'<button class="btn btn-green btn-sm" onclick="saveClientId()">Conectar</button>'
+    +'<button class="btn btn-sm" onclick="clearDriveResults()">Cancelar</button>'
+    +'</div></div>';
+  window._driveCb=cb;
+}
+
+function saveClientId(){
+  var cid=gi('gcidInput')?gi('gcidInput').value.trim():'';
+  if(!cid){toast('Cole o Client ID.');return;}
+  S.driveClientId=cid;
+  try{localStorage.setItem('aba_gcid',cid);}catch(e){}
+  gi('driveResults').innerHTML='';
+  driveOAuthPopup(cid,window._driveCb);
+}
+
+function driveOAuthPopup(cid, cb){
+  var origin=window.location.origin||'null';
+  var redirect='https://giovanna-js.github.io/agente-aba';
+  var scope='https://www.googleapis.com/auth/drive.readonly';
+  var state='driveauth_'+Date.now();
+  var url='https://accounts.google.com/o/oauth2/v2/auth'
+    +'?client_id='+encodeURIComponent(cid)
+    +'&redirect_uri='+encodeURIComponent(redirect)
+    +'&response_type=token'
+    +'&scope='+encodeURIComponent(scope)
+    +'&state='+state;
+  var popup=window.open(url,'driveAuth','width=500,height=640,left=100,top=80');
+  gi('driveResults').innerHTML='<div class="muted" style="padding:16px;text-align:center;font-size:12px"><div class="dots"><span></span><span></span><span></span></div><p style="margin-top:8px">Aguardando autorização na janela do Google...<br><small>Se a janela não abriu, verifique o bloqueador de popups.</small></p></div>';
+  // Poll for token in hash
+  var poll=setInterval(function(){
+    try{
+      if(!popup||popup.closed){
+        clearInterval(poll);
+        gi('driveResults').innerHTML='<div style="color:var(--r);padding:12px;font-size:12px">Janela fechada. Clique em "↻ Sync tudo" para tentar novamente.</div>';
+        return;
+      }
+      var hash=popup.location.hash||'';
+      if(hash.includes('access_token')){
+        clearInterval(poll);
+        popup.close();
+        var params={};
+        hash.slice(1).split('&').forEach(function(p){var kv=p.split('=');params[kv[0]]=decodeURIComponent(kv[1]||'');});
+        _driveToken=params.access_token;
+        _driveExpiry=Date.now()+(parseInt(params.expires_in||3600)-120)*1000;
+        toast('Drive conectado ✓');
+        gi('driveResults').innerHTML='';
+        if(cb)cb();
+      }
+    }catch(e){} // cross-origin, keep polling
+  },500);
+  setTimeout(function(){clearInterval(poll);if(popup&&!popup.closed)popup.close();},120000);
+}
+
+// Check hash on load (if redirect happened in same tab)
+(function(){
+  try{
+    if(window.location.hash&&window.location.hash.includes('access_token')){
+      var params={};
+      window.location.hash.slice(1).split('&').forEach(function(p){var kv=p.split('=');params[kv[0]]=decodeURIComponent(kv[1]||'');});
+      if(params.access_token){
+        _driveToken=params.access_token;
+        _driveExpiry=Date.now()+(parseInt(params.expires_in||3600)-120)*1000;
+        history.replaceState(null,'',window.location.pathname+window.location.search);
+        toast('Drive conectado ✓');
+      }
+    }
+    var sc=localStorage.getItem('aba_gcid');if(sc)S.driveClientId=sc;
+    var sf=localStorage.getItem('aba_drive_folder');if(sf)S.driveRootFolder=sf;
+  }catch(e){}
+})();
+
+// ── Drive REST API helpers ──────────────────────────────
+function driveGet(url){
+  return fetch(url,{headers:{Authorization:'Bearer '+_driveToken}})
+    .then(function(r){
+      if(r.status===401){_driveToken=null;throw new Error('Sessão Drive expirada. Clique ☁ Drive novamente.');}
+      if(!r.ok)throw new Error('Drive API '+r.status);
+      return r.json();
+    });
+}
+
+function driveListChildren(folderId){
+  var q=encodeURIComponent('"'+folderId+'" in parents and trashed=false');
+  return driveGet('https://www.googleapis.com/drive/v3/files'
+    +'?q='+q+'&fields=files(id,name,mimeType,modifiedTime,size)'
+    +'&orderBy=modifiedTime+desc&pageSize=50');
+}
+
+function driveDownload(fileId){
+  return fetch('https://www.googleapis.com/drive/v3/files/'+fileId+'?alt=media',
+    {headers:{Authorization:'Bearer '+_driveToken}})
+    .then(function(r){
+      if(!r.ok)throw new Error('Download falhou '+r.status);
+      return r.arrayBuffer();
+    });
+}
+
+function isXlsx(f){
+  return f.mimeType==='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ||f.name.toLowerCase().endsWith('.xlsx')||f.name.toLowerCase().endsWith('.xls');
+}
+
+// Find xlsx in a client folder recursively (up to 2 levels deep)
+async function findXlsxInFolder(folderId){
+  var data=await driveListChildren(folderId);
+  var files=data.files||[];
+  // Direct xlsx
+  var direct=files.filter(isXlsx).sort(function(a,b){
+    return (b.modifiedTime||'').localeCompare(a.modifiedTime||'');
+  });
+  if(direct.length)return direct[0];
+  // Search subfolders (prefer "1.Materiais" or "Coleta")
+  var subs=files.filter(function(f){return f.mimeType==='application/vnd.google-apps.folder';});
+  subs.sort(function(a,b){
+    var scoreA=a.name.includes('Mater')||a.name.includes('Coleta')?0:1;
+    var scoreB=b.name.includes('Mater')||b.name.includes('Coleta')?0:1;
+    return scoreA-scoreB;
+  });
+  for(var i=0;i<subs.length;i++){
+    var sub=await driveListChildren(subs[i].id);
+    var xlsxInSub=(sub.files||[]).filter(isXlsx).sort(function(a,b){
+      return (b.modifiedTime||'').localeCompare(a.modifiedTime||'');
+    });
+    if(xlsxInSub.length)return xlsxInSub[0];
+  }
+  return null;
+}
+
+// ── Main sync functions ────────────────────────────────
+function clearDriveResults(){var el=gi('driveResults');if(el)el.innerHTML='';}
+function openDriveConfig(){
+  var name=gi('driveFolderLabel')?gi('driveFolderLabel').textContent:'';
+  toast('Pasta raiz hardcoded: "3. Intervenção individual" (ID: '+DRIVE_ROOT_ID+'). Para mudar, edite DRIVE_ROOT_ID no código.');
+}
+
+async function syncAllClients(){
+  if(driveNeedsAuth()){driveAuth(syncAllClients);return;}
+  var container=gi('driveResults');
+  container.innerHTML='<div id="syncLog" style="padding:10px;font-size:12px;color:var(--ink2)"><div class="dots" style="margin-bottom:8px"><span></span><span></span><span></span></div>Listando clientes...</div>';
+
+  try{
+    var data=await driveListChildren(DRIVE_ROOT_ID);
+    var clientFolders=(data.files||[]).filter(function(f){
+      return f.mimeType==='application/vnd.google-apps.folder'
+        && f.name!=='X.Y.Z. - Modelo de Pasta'; // skip template
+    });
+
+    if(!clientFolders.length){
+      container.innerHTML='<div style="color:var(--r);padding:12px;font-size:12px">Nenhuma pasta de cliente encontrada.</div>';
+      return;
+    }
+
+    gi('syncLog').textContent='Encontrei '+clientFolders.length+' clientes. Buscando planilhas...';
+
+    // Find xlsx for each client in parallel (batches of 5)
+    var results=new Array(clientFolders.length).fill(null);
+    for(var batch=0;batch<clientFolders.length;batch+=5){
+      var chunk=clientFolders.slice(batch,batch+5);
+      var promises=chunk.map(function(f,i){
+        return findXlsxInFolder(f.id).then(function(xlsx){
+          results[batch+i]={folder:f,xlsx:xlsx};
+        }).catch(function(){
+          results[batch+i]={folder:clientFolders[batch+i],xlsx:null};
+        });
+      });
+      await Promise.all(promises);
+      if(gi('syncLog'))gi('syncLog').textContent='Verificando '+(Math.min(batch+5,clientFolders.length))+'/'+clientFolders.length+'...';
+    }
+
+    // Build result list
+    container.innerHTML='';
+    var withXlsx=results.filter(function(r){return r&&r.xlsx;});
+    var noXlsx=results.filter(function(r){return r&&!r.xlsx;});
+
+    var header=document.createElement('div');
+    header.style.cssText='padding:6px 0 10px;display:flex;align-items:center;justify-content:space-between;gap:8px';
+    header.innerHTML='<span style="font-size:12px;font-weight:600;color:var(--ink)">'+withXlsx.length+' com planilha · '+noXlsx.length+' sem planilha</span>';
+    var syncBtn=document.createElement('button');
+    syncBtn.className='btn btn-green btn-sm';syncBtn.textContent='↻ Importar todos ('+withXlsx.length+')';
+    syncBtn.onclick=function(){importAllQueue(withXlsx);};
+    header.appendChild(syncBtn);container.appendChild(header);
+
+    results.forEach(function(r){
+      if(!r)return;
+      var row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border:1px solid var(--b);border-radius:var(--rad);margin-bottom:4px;gap:8px';
+      var mod=r.xlsx&&r.xlsx.modifiedTime?new Date(r.xlsx.modifiedTime).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}):'';
+      var info=document.createElement('div');info.style.minWidth='0';
+      info.innerHTML='<div style="font-size:12px;font-weight:500;color:var(--ink)">'+r.folder.name+'</div>'
+        +(r.xlsx
+          ?'<div class="muted" style="font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+r.xlsx.name+(mod?' · '+mod:'')+'</div>'
+          :'<div style="font-size:10px;color:var(--r)">Sem planilha</div>');
+      row.appendChild(info);
+      if(r.xlsx){
+        var btn=document.createElement('button');btn.className='btn btn-xs btn-green';btn.textContent='↓';
+        btn.title='Importar '+r.xlsx.name;
+        (function(fid,fname){btn.onclick=function(){importFromDrive(fid,fname);};})(r.xlsx.id,r.xlsx.name);
+        row.appendChild(btn);
+      }
+      container.appendChild(row);
+    });
+
+  }catch(e){
+    container.innerHTML='<div style="color:var(--r);font-size:12px;padding:10px">'+e.message+'</div>';
+  }
+}
+
+async function importAllQueue(queue){
+  var ok=0,err=0;
+  var prog=document.createElement('div');
+  prog.style.cssText='padding:10px;font-size:12px;color:var(--ink2);border-top:1px solid var(--b);margin-top:8px';
+  prog.textContent='Iniciando importação de '+queue.length+' clientes...';
+  gi('driveResults').appendChild(prog);
+  for(var i=0;i<queue.length;i++){
+    var r=queue[i];
+    prog.textContent='Importando '+(i+1)+'/'+queue.length+': '+r.folder.name+'...';
+    try{
+      var buf=await driveDownload(r.xlsx.id);
+      var wb=XLSX.read(buf,{type:'array',cellDates:true});
+      var res=parseWB(wb,r.xlsx.name);
+      mergeData(res);ok++;
+    }catch(e){
+      err++;console.warn('Erro '+r.folder.name+':',e.message);
+    }
+  }
+  prog.innerHTML='<strong>Concluído:</strong> '+ok+' importados'+(err?' · <span style="color:var(--r)">'+err+' erros</span>':'')+'.<br>';
+  var closeBtn=document.createElement('button');
+  closeBtn.className='btn btn-sm';closeBtn.style.marginTop='6px';closeBtn.textContent='Fechar';
+  closeBtn.onclick=function(){gi('driveModal').style.display='none';renderSidebar();rv();};
+  prog.appendChild(closeBtn);
+  renderSidebar();
+  if(ok)toast('✓ '+ok+' clientes importados do Drive',4000);
+}
+
+async function searchDrive(){
+  var query=gi('driveSearch').value.trim();
+  if(!query){toast('Digite um nome para buscar.');return;}
+  if(driveNeedsAuth()){driveAuth(searchDrive);return;}
+  var container=gi('driveResults');
+  container.innerHTML='<div class="muted" style="padding:16px;text-align:center"><div class="dots"><span></span><span></span><span></span></div></div>';
+  try{
+    var q=encodeURIComponent('"'+DRIVE_ROOT_ID+'" in parents and name contains "'+query+'" and mimeType="application/vnd.google-apps.folder" and trashed=false');
+    var data=await driveGet('https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,name,modifiedTime)&pageSize=20');
+    var folders=data.files||[];
+    if(!folders.length){
+      container.innerHTML='<div class="muted" style="padding:16px;text-align:center;font-size:12px">Nenhum cliente encontrado para "'+query+'".</div>';
+      return;
+    }
+    container.innerHTML='';
+    for(var i=0;i<folders.length;i++){
+      var f=folders[i];
+      var xlsx=await findXlsxInFolder(f.id);
+      var row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:9px 11px;border:1px solid var(--b);border-radius:var(--rad);margin-bottom:6px;gap:8px';
+      var info=document.createElement('div');info.style.minWidth='0';
+      info.innerHTML='<div style="font-size:12.5px;font-weight:500;color:var(--ink)">'+f.name+'</div>'
+        +(xlsx?'<div class="muted" style="font-size:10.5px">'+xlsx.name+'</div>'
+               :'<div style="font-size:10.5px;color:var(--r)">Sem planilha xlsx</div>');
+      row.appendChild(info);
+      if(xlsx){
+        var btn=document.createElement('button');btn.className='btn btn-green btn-xs';btn.textContent='Importar';
+        (function(fid,fname){btn.onclick=function(){importFromDrive(fid,fname);};})(xlsx.id,xlsx.name);
+        row.appendChild(btn);
+      }
+      container.appendChild(row);
+    }
+  }catch(e){
+    container.innerHTML='<div style="color:var(--r);font-size:12px;padding:10px">'+e.message+'</div>';
+  }
+}
+
+async function importFromDrive(fileId,fileName){
+  if(driveNeedsAuth()){driveAuth(function(){importFromDrive(fileId,fileName);});return;}
+  gi('driveModal').style.display='none';
+  gi('importModal').style.display='flex';gi('importMsg').textContent='Baixando: '+fileName+'...';
+  try{
+    var buf=await driveDownload(fileId);
+    var wb=XLSX.read(buf,{type:'array',cellDates:true});
+    var res=parseWB(wb,fileName);
+    gi('importModal').style.display='none';
+    mergeData(res);renderSidebar();gi('tb-client').textContent=cl().code;
+    goV('painel');toast('✓ '+fileName,3000);
+  }catch(e){
+    gi('importModal').style.display='none';
+    toast('Erro: '+e.message,5000);
+  }
+}
+
+
+function exportCSV(){
+  var c=cl(),ps=cprogs();if(!ps.length){toast('Sem dados.');return;}
+  var rows=[['Cliente','Programa','Alvo','Tipo','Fase atual','Status','Critério','Sessões totais','Sessões fase atual','Último valor','Tendência fase','Decisão']];
+  ps.forEach(function(p){var vals=p.sess.map(function(s){return s.v;});var ph=currentPhase(p.sess);var cv=sessInCurrentPhase(p.sess).map(function(s){return s.v;});var t=trendInfo(cv);var dec=autoDecide(p.sess,p.crit);rows.push([c.code,p.programa,p.alvo,p.tipo,ph,p.crit||'?',vals.length,cv.length,vals[vals.length-1]||0,t.lbl,dec?TERMS[dec].label:'-']);});
+  var csv=rows.map(function(r){return r.map(function(x){return'"'+String(x||'').replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv'}));a.download='aba_'+c.code+'_'+new Date().toISOString().split('T')[0]+'.csv';a.click();toast('Exportado.');
+}
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded',function(){
+  // Delegated: radio buttons for IOA method toggle
+  document.addEventListener('change',function(e){
+    var r=e.target;
+    if(r.type==='radio'&&r.name&&r.name.startsWith('qi-met-')){
+      var sfx=r.name.replace('qi-met-','');
+      ioaToggleMethod(sfx,r.value);
+    }
+  });
+  loadPersisted();
+  gi('tb-client').textContent=cl().code;
+  renderSidebar();
+  rv();
+  // Draw charts after render (delayed for DOM)
+  setInterval(drawCharts,600);
+});
+</script>
+</body>
+</html>
