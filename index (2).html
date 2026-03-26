@@ -216,9 +216,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
     <button class="nb" onclick="goV('supervisao')">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3H4a1 1 0 00-1 1v9a1 1 0 001 1h8a1 1 0 001-1V4a1 1 0 00-1-1h-2M6 3a1 1 0 011-1h2a1 1 0 011 1M6 3h4"/><path d="M5 8.5l2 2 4-4"/></svg>Checklist Supervisão
     </button>
-    <button class="nb" onclick="goV('relatorio')">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 1H4a1 1 0 00-1 1v12a1 1 0 001 1h8a1 1 0 001-1V4L10 1z"/><path d="M10 1v3h3M5 7h6M5 9.5h6M5 12h4"/></svg>Relatório / PTI
-    </button>
+    
     <button class="nb" onclick="goV('pais')">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 7a3 3 0 10-6 0 3 3 0 006 0zM2 14c0-3 2-4.5 6-4.5S14 11 14 14"/><path d="M12 5a2 2 0 110 4"/><path d="M14 13c0-2-.8-3.5-2-4"/></svg>
       Para os Pais
@@ -630,7 +628,7 @@ function parseAssent(rows,out){
 // ══════════════════════════════════════════════════════
 // STATE + PERSISTENCE
 // ══════════════════════════════════════════════════════
-var S={view:'painel',cid:1,clients:[{id:1,code:'M.C.J.L.',ini:'MC',diag:'TEA',notas:[]}],programs:[],ioa:[],integ:[],checklist:{pre:[{id:'p1',t:'Revisar dados do cliente pré-supervisão',done:false},{id:'p2',t:'Analisar dados dos programas observados',done:false},{id:'p3',t:'Analisar dados do PIC',done:false},{id:'p4',t:'Determinar ação para cada programa',done:false},{id:'p5',t:'Verificar checklist de programas realizados em sessão',done:false}],during:[{id:'d1',t:'Fazer rapport em relação ao caso',done:false},{id:'d2',t:'Seguir agenda de supervisão',done:false},{id:'d3',t:'Rever habilidades do aplicador pendentes',done:false},{id:'d4',t:'Verificar frequência de aplicação dos programas',done:false},{id:'d5',t:'Seguir fluxograma de tomada de decisão',done:false},{id:'d6',t:'Apresentar e discutir procedimentos novos',done:false},{id:'d7',t:'Apresentar e discutir programas novos',done:false},{id:'d8',t:'Fornecer feedback positivo ao aplicador',done:false},{id:'d9',t:'Fornecer feedback corretivo',done:false},{id:'d10',t:'Usar estratégias baseadas em evidências',done:false},{id:'d11',t:'Preencher checklist de habilidades do aplicador',done:false},{id:'d12',t:'Finalizar com rapport final',done:false}],post:[{id:'po1',t:'Descrever novos procedimentos utilizados',done:false},{id:'po2',t:'Descrever novos programas para início',done:false},{id:'po3',t:'Escrever plano de conduta',done:false},{id:'po4',t:'Enviar análises e feedbacks ao grupo',done:false}]},flow:null,chat:[],openCards:{},flows:{},driveRootFolder:'Intervenção Individual',driveClientId:'',paisTexts:{}};
+var S={view:'painel',cid:1,clients:[{id:1,code:'M.C.J.L.',ini:'MC',diag:'TEA',notas:[]}],programs:[],ioa:[],integ:[],checklist:{pre:[{id:'p1',t:'Revisar dados do cliente pré-supervisão',done:false},{id:'p2',t:'Analisar dados dos programas observados',done:false},{id:'p3',t:'Analisar dados do PIC',done:false},{id:'p4',t:'Determinar ação para cada programa',done:false},{id:'p5',t:'Verificar checklist de programas realizados em sessão',done:false}],during:[{id:'d1',t:'Fazer rapport em relação ao caso',done:false},{id:'d2',t:'Seguir agenda de supervisão',done:false},{id:'d3',t:'Rever habilidades do aplicador pendentes',done:false},{id:'d4',t:'Verificar frequência de aplicação dos programas',done:false},{id:'d5',t:'Seguir fluxograma de tomada de decisão',done:false},{id:'d6',t:'Apresentar e discutir procedimentos novos',done:false},{id:'d7',t:'Apresentar e discutir programas novos',done:false},{id:'d8',t:'Fornecer feedback positivo ao aplicador',done:false},{id:'d9',t:'Fornecer feedback corretivo',done:false},{id:'d10',t:'Usar estratégias baseadas em evidências',done:false},{id:'d11',t:'Preencher checklist de habilidades do aplicador',done:false},{id:'d12',t:'Finalizar com rapport final',done:false}],post:[{id:'po1',t:'Descrever novos procedimentos utilizados',done:false},{id:'po2',t:'Descrever novos programas para início',done:false},{id:'po3',t:'Escrever plano de conduta',done:false},{id:'po4',t:'Enviar análises e feedbacks ao grupo',done:false}]},flow:null,chat:[],openCards:{},flows:{},driveRootFolder:'Intervenção Individual',driveClientId:'',paisTexts:{},supLogs:[],_supLogAtivo:null};
 
 function ioaToggleMethod(sfx, method){
   var totBlk=gi('qi-tot-blk-'+sfx);
@@ -647,6 +645,7 @@ function persist(){try{
   localStorage.setItem('aba_ioa',JSON.stringify(S.ioa));
   localStorage.setItem('aba_integ',JSON.stringify(S.integ));
   localStorage.setItem('aba_checklist',JSON.stringify(S.checklist));
+  localStorage.setItem('aba_suplogs',JSON.stringify(S.supLogs||[]));
 }catch(e){}}
 
 function loadPersisted(){try{
@@ -670,6 +669,7 @@ function loadPersisted(){try{
   var io=localStorage.getItem('aba_ioa');if(io)S.ioa=JSON.parse(io);
   var ig=localStorage.getItem('aba_integ');if(ig)S.integ=JSON.parse(ig);
   var ck=localStorage.getItem('aba_checklist');if(ck)S.checklist=JSON.parse(ck);
+  var sl=localStorage.getItem('aba_suplogs');if(sl)S.supLogs=JSON.parse(sl);
   var pt=localStorage.getItem('aba_pais');if(pt)S.paisTexts=JSON.parse(pt);
   var df=localStorage.getItem('aba_drive_folder');if(df)S.driveRootFolder=df;
   var dc=localStorage.getItem('aba_drive_client_id');if(dc)S.driveClientId=dc;
@@ -689,8 +689,8 @@ function clearData(){
 // ══════════════════════════════════════════════════════
 // NAVIGATION
 // ══════════════════════════════════════════════════════
-var VIEW_META={painel:['Painel - Briefing','Prioridade por urgência clínica · decisão inline'],notas:['Notas de Sessão','Prontuário qualitativo - presença, registro, serviço'],ioa:['IOA e Integridade','Confiabilidade e fidelidade de implementação'],supervisao:['Checklist de Supervisão','Pré · Durante · Pós supervisão direta'],relatorio:['Relatório / PTI','Síntese narrativa + Plano de Tratamento Individualizado'],pais:['Para os Pais','Resumo acessível do progresso do seu filho'],ia:['Assistente','Análise contextualizada com dados reais do cliente']};
-function goV(v){S.view=v;document.querySelectorAll('.nb').forEach(function(b,i){b.classList.toggle('on',['painel','notas','supervisao','relatorio','pais','ia'][i]===v);});gi('tb-title').textContent=VIEW_META[v][0];gi('tb-sub').textContent=VIEW_META[v][1];rv();}
+var VIEW_META={painel:['Análise de Dados e Tomada de Decisão','Prioridade clínica · decisão inline por programa'],notas:['Notas de Sessão','Prontuário qualitativo - presença, registro, serviço'],ioa:['IOA e Integridade','Confiabilidade e fidelidade de implementação'],supervisao:['Log de Supervisão','Checklist · Registro documentado da supervisão'],relatorio:['Relatório / PTI','Síntese narrativa + Plano de Tratamento Individualizado'],pais:['Para os Pais','Resumo acessível do progresso do seu filho'],ia:['Assistente','Análise contextualizada com dados reais do cliente']};
+function goV(v){S.view=v;document.querySelectorAll('.nb').forEach(function(b,i){b.classList.toggle('on',['painel','notas','supervisao','pais','ia'][i]===v);});gi('tb-title').textContent=VIEW_META[v][0];gi('tb-sub').textContent=VIEW_META[v][1];rv();}
 function cl(){return S.clients.find(function(c){return c.id===S.cid;})||S.clients[0];}
 function cprogs(){return S.programs.filter(function(p){return p.cid===S.cid;});}
 function cnotas(){var c=cl();return c&&c.notas?c.notas:[];}
@@ -762,7 +762,7 @@ function renderSidebar(query){
   +(list.length===0?'<div class="muted" style="font-size:10.5px;padding:8px;text-align:center;color:rgba(255,255,255,.3)">Nenhum cliente encontrado</div>':'');
 }
 function filterClients(q){renderSidebar(q);}
-function rv(){var el=gi('content');if(S.view==='painel')el.innerHTML=vPainel();else if(S.view==='notas')el.innerHTML=vNotas();else if(S.view==='ioa'){S.view='painel';el.innerHTML=vPainel();}else if(S.view==='supervisao')el.innerHTML=vSupervisao();else if(S.view==='relatorio')el.innerHTML=vRelatorio();else if(S.view==='pais')el.innerHTML=vPais();else if(S.view==='ia')el.innerHTML=vIA();}
+function rv(){var el=gi('content');if(S.view==='painel')el.innerHTML=vPainel();else if(S.view==='notas')el.innerHTML=vNotas();else if(S.view==='ioa'){S.view='painel';el.innerHTML=vPainel();}else if(S.view==='supervisao')el.innerHTML=vSupervisao();else if(S.view==='relatorio'){S.view='painel';el.innerHTML=vPainel();}else if(S.view==='pais')el.innerHTML=vPais();else if(S.view==='ia')el.innerHTML=vIA();}
 
 // ══════════════════════════════════════════════════════
 // GROUPING
@@ -1803,26 +1803,329 @@ function saveInteg(){
 // ══════════════════════════════════════════════════════
 // VIEW: CHECKLIST
 // ══════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+// VIEW: LOG DE SUPERVISÃO
+// ══════════════════════════════════════════════════════
 function vSupervisao(){
-  var ck=S.checklist;var all=[].concat(ck.pre,ck.during,ck.post);
-  var done=all.filter(function(i){return i.done;}).length;var pct=Math.round(done/all.length*100);
-  return'<div style="max-width:840px"><div class="sec-title">Checklist de Supervisão Direta</div>'
-    +'<div class="flex aic gap12 mb14"><div style="flex:1"><div class="pbar"><div class="pbar-f" style="width:'+pct+'%;background:'+(pct===100?'var(--g)':'var(--ink)')+'"></div></div></div>'
-    +'<span class="mono muted">'+done+'/'+all.length+'</span>'
-    +'<button class="btn btn-xs" onclick="ckReset()">Reiniciar</button>'
-    +'<button class="btn btn-xs" onclick="ckExport()">↓ CSV</button></div>'
-    +'<div class="g3">'+['pre','during','post'].map(function(grp){
-      var lbl={pre:'Pré-supervisão',during:'Durante',post:'Pós-supervisão'}[grp];
-      var items=ck[grp];var dn=items.filter(function(i){return i.done;}).length;
-      return'<div class="card card-sm"><div class="card-hd" style="margin-bottom:10px"><div><div class="card-title">'+lbl+'</div><div class="card-sub">'+dn+'/'+items.length+'</div></div><span class="badge '+(dn===items.length?'bg-g':'bg-n')+'" style="font-size:9px">'+(dn===items.length?'✓ Completo':'Pendente')+'</span></div>'
-        +items.map(function(item){return'<div class="ck-item '+(item.done?'done':'')+'" onclick="ckToggle(\''+grp+'\',\''+item.id+'\')">'
-          +'<div class="ck-box '+(item.done?'on':'')+'">'+(item.done?'<svg width="8" height="6" viewBox="0 0 8 6"><path d="M1 3l2 2 4-4" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>':'')+'</div>'
-          +'<span class="ck-text">'+item.t+'</span></div>';}).join('')+'</div>';
-    }).join('')+'</div></div>';
+  var logs=S.supLogs||[];
+  var cli=cl();
+  var html='<div style="max-width:860px">';
+  html+='<div class="sec-title">Log de Supervisão — '+cli.code+'</div>';
+  html+='<div class="flex gap8 mb16">';
+  html+='<button class="btn btn-dark btn-sm" onclick="novoLogSup()">+ Novo registro</button>';
+  if(logs.length)html+='<button class="btn btn-xs" onclick="exportLogSup()">↓ Exportar</button>';
+  html+='</div>';
+  if(S._supLogAtivo)html+=renderLogForm(S._supLogAtivo);
+  if(logs.length===0&&!S._supLogAtivo)html+='<div class="muted" style="text-align:center;padding:40px;font-size:12.5px">Nenhum registro ainda.<br>Clique em <strong>+ Novo registro</strong> para documentar uma supervisão.</div>';
+  html+=logs.slice().reverse().map(function(log,i){return renderLogCard(log,logs.length-1-i);}).join('');
+  html+='</div>';
+  return html;
 }
+
+function novoLogSup(){
+  if(!S._supLogAtivo){
+    var now=new Date();
+    S._supLogAtivo={
+      id:Date.now(),
+      cid:S.cid,
+      data:now.toLocaleDateString('pt-BR'),
+      horaIni:now.toTimeString().substring(0,5),
+      horaFim:'',
+      supervisor:'',
+      profissional:'',
+      especialidade:'',
+      modalidade:'presencial',
+      tipoSup:'reuniao',
+      tipos:[],
+      observouSessao:false,
+      feedback:false,
+      alterouPrograma:false,
+      alinhouFamilia:false,
+      conjunta:false,
+      contexto:'',
+      atividades:'',
+      comportamentos:'',
+      procedimentos:'',
+      orientacoes:'',
+      ajustes:'',
+      proximosPassos:'',
+      pendencias:'',
+      prazo:'',
+      status:'rascunho',
+      cienciaSupervisor:false,
+      cienciaProfissional:false,
+      // checklist
+      ck:{pre:[...S.checklist.pre.map(function(i){return{id:i.id,t:i.t,done:i.done};})],
+          during:[...S.checklist.during.map(function(i){return{id:i.id,t:i.t,done:i.done};})],
+          post:[...S.checklist.post.map(function(i){return{id:i.id,t:i.t,done:i.done};})]
+         }
+    };
+  }
+  rv();
+  setTimeout(function(){var el=document.getElementById('logForm');if(el)el.scrollIntoView({behavior:'smooth'});},100);
+}
+
+function renderLogForm(log){
+  var TIPOS_SUP=[
+    {v:'obs_direta',l:'Observação direta'},
+    {v:'reuniao',l:'Reunião de supervisão'},
+    {v:'treino',l:'Treino de aplicador'},
+    {v:'revisao_caso',l:'Revisão de caso'},
+    {v:'revisao_prog',l:'Revisão de programas'},
+    {v:'analise_dados',l:'Análise de dados'},
+    {v:'devolutiva',l:'Devolutiva para responsável'},
+    {v:'conjunta',l:'Supervisão conjunta'},
+  ];
+  var html='<div id="logForm" class="card mb16" style="border-top:3px solid var(--bl)">';
+  html+='<div class="card-hd"><div class="card-title">Registro de Supervisão</div>';
+  html+='<div class="flex gap6"><span class="badge '+(log.status==="finalizado"?"bg-g":"bg-a")+'">'+( log.status==="finalizado"?"Finalizado":"Rascunho")+'</span>';
+  html+='<button class="btn btn-xs" onclick="salvarLogSup(false)">Salvar rascunho</button>';
+  html+='<button class="btn btn-xs btn-green" onclick="salvarLogSup(true)">Finalizar</button>';
+  html+='<button class="btn btn-xs" onclick="cancelarLogSup()">Cancelar</button></div></div>';
+
+  // A. IDENTIFICAÇÃO
+  html+='<div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.8px;font-family:JetBrains Mono,monospace;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--b)">A. Identificação</div>';
+  html+='<div class="g3" style="gap:8px;margin-bottom:10px">';
+  html+='<div class="field"><label>Data</label><input class="fi" id="ld-data" value="'+log.data+'" data-k="data" onchange="upLog(this.dataset.k,this.value)"></div>';
+  html+='<div class="field"><label>Início</label><input class="fi" type="time" id="ld-ini" value="'+log.horaIni+'" data-k="horaIni" onchange="upLog(this.dataset.k,this.value)"></div>';
+  html+='<div class="field"><label>Término</label><input class="fi" type="time" id="ld-fim" value="'+log.horaFim+'" data-k="horaFim" onchange="upLog(this.dataset.k,this.value)"></div>';
+  html+='</div>';
+  html+='<div class="g2" style="gap:8px;margin-bottom:10px">';
+  html+='<div class="field"><label>Supervisor responsável</label><input class="fi" id="ld-sup" placeholder="Nome" value="'+log.supervisor+'" data-k="supervisor" onchange="upLog(this.dataset.k,this.value)"></div>';
+  html+='<div class="field"><label>Profissional acompanhado</label><input class="fi" id="ld-prof" placeholder="Nome" value="'+log.profissional+'" data-k="profissional" onchange="upLog(this.dataset.k,this.value)"></div>';
+  html+='</div>';
+  html+='<div class="g2" style="gap:8px;margin-bottom:14px">';
+  html+='<div class="field"><label>Especialidade</label><input class="fi" id="ld-esp" placeholder="Ex: ABA, Fonoaudiologia..." value="'+log.especialidade+'" data-k="especialidade" onchange="upLog(this.dataset.k,this.value)"></div>';
+  html+='<div class="field"><label>Modalidade</label><select class="fs" data-k="modalidade" onchange="upLog(this.dataset.k,this.value)">';
+  ['presencial','remota'].forEach(function(o){html+='<option value="'+o+'"'+(log.modalidade===o?' selected':'')+'>'+o.charAt(0).toUpperCase()+o.slice(1)+'</option>';});
+  html+='</select></div></div>';
+
+  // B. TIPO
+  html+='<div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.8px;font-family:JetBrains Mono,monospace;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--b)">B. Tipo de Supervisão</div>';
+  html+='<div class="flex gap6 mb14" style="flex-wrap:wrap">';
+  TIPOS_SUP.forEach(function(t){
+    var sel=(log.tipos||[]).indexOf(t.v)>=0;
+    html+='<label style="display:flex;align-items:center;gap:5px;font-size:11.5px;cursor:pointer;padding:5px 10px;border:1px solid var(--b);border-radius:var(--rad);background:'+(sel?'var(--bl)':'var(--surf2)')+';color:'+(sel?'#fff':'var(--ink2)')+'">';
+    html+='<input type="checkbox" data-tv="'+t.v+'" '+(sel?'checked':'')+' onchange="upLogTipo(this)" style="display:none">'+t.l+'</label>';
+  });
+  html+='</div>';
+
+  // C. CHECKLIST RÁPIDO
+  html+='<div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.8px;font-family:JetBrains Mono,monospace;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--b)">C. Checklist de Supervisão</div>';
+  html+='<div class="g3" style="gap:8px;margin-bottom:10px">';
+  ['pre','during','post'].forEach(function(grp){
+    var lbl={pre:'Pré-supervisão',during:'Durante',post:'Pós-supervisão'}[grp];
+    var items=log.ck[grp];var dn=items.filter(function(i){return i.done;}).length;
+    html+='<div style="background:var(--surf2);border-radius:var(--rad);padding:10px">';
+    html+='<div style="font-size:11px;font-weight:600;color:var(--ink);margin-bottom:8px">'+lbl+' <span class="muted" style="font-size:10px">'+dn+'/'+items.length+'</span></div>';
+    items.forEach(function(item){
+      html+='<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:5px;cursor:pointer" data-g="'+grp+'" data-i="'+item.id+'" onclick="upLogCkEl(this)">';
+      html+='<div style="width:14px;height:14px;border:1.5px solid var(--b);border-radius:3px;flex-shrink:0;margin-top:1px;background:'+(item.done?'var(--g)':'transparent')+';display:flex;align-items:center;justify-content:center">';
+      if(item.done)html+='<svg width="8" height="6" viewBox="0 0 8 6"><path d="M1 3l2 2 4-4" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>';
+      html+='</div>';
+      html+='<span style="font-size:11.5px;color:var(--ink2);line-height:1.4">'+item.t+'</span></div>';
+    });
+    html+='</div>';
+  });
+  html+='</div>';
+
+  // D. CLASSIFICAÇÕES
+  html+='<div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.8px;font-family:JetBrains Mono,monospace;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--b)">D. Classificações</div>';
+  html+='<div class="flex gap12 mb14" style="flex-wrap:wrap">';
+  [
+    {k:'observouSessao',l:'Observou sessão'},
+    {k:'feedback',l:'Feedback ao profissional'},
+    {k:'alterouPrograma',l:'Alterou programa'},
+    {k:'alinhouFamilia',l:'Alinhou com família'},
+    {k:'conjunta',l:'Supervisão conjunta'},
+  ].forEach(function(fl){
+    html+='<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer">';
+    html+='<input type="checkbox" '+(log[fl.k]?'checked':'')+' data-k="'+fl.k+'" onchange="upLogBool(this.dataset.k,this.checked)" style="width:14px;height:14px;cursor:pointer">';
+    html+=fl.l+'</label>';
+  });
+  html+='</div>';
+
+  // E. REGISTRO DESCRITIVO
+  html+='<div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.8px;font-family:JetBrains Mono,monospace;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--b)">E. Registro Descritivo</div>';
+  [
+    {k:'contexto',l:'Contexto observado',p:'Descreva o contexto da sessão ou reunião...'},
+    {k:'atividades',l:'Atividades realizadas',p:'Quais atividades foram desenvolvidas...'},
+    {k:'comportamentos',l:'Comportamentos ou respostas relevantes',p:'Registre observações relevantes...'},
+    {k:'procedimentos',l:'Procedimentos revisados',p:'Quais procedimentos foram revisados...'},
+    {k:'orientacoes',l:'Orientações fornecidas pelo supervisor',p:'Registre as orientações dadas...'},
+    {k:'ajustes',l:'Ajustes definidos',p:'Descreva os ajustes acordados...'},
+    {k:'proximosPassos',l:'Próximos passos',p:'O que deve acontecer até a próxima supervisão...'},
+  ].forEach(function(f){
+    html+='<div class="field mb8"><label>'+f.l+'</label>';
+    html+='<textarea class="fta" rows="2" placeholder="'+f.p+'" style="font-size:12.5px;line-height:1.7" data-k="'+f.k+'" onchange="upLog(this.dataset.k,this.value)">'+log[f.k]+'</textarea></div>';
+  });
+
+  // F. ENCERRAMENTO
+  html+='<div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.8px;font-family:JetBrains Mono,monospace;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--b)">F. Encerramento</div>';
+  html+='<div class="g2" style="gap:8px;margin-bottom:10px">';
+  html+='<div class="field"><label>Pendências</label><textarea class="fta" rows="2" style="font-size:12px" data-k="pendencias" onchange="upLog(this.dataset.k,this.value)">'+log.pendencias+'</textarea></div>';
+  html+='<div class="field"><label>Prazo para acompanhamento</label><input class="fi" placeholder="Ex: 07/04/2026" value="'+log.prazo+'" data-k="prazo" onchange="upLog(this.dataset.k,this.value)"></div>';
+  html+='</div>';
+  html+='<div class="flex gap12 mb12">';
+  html+='<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" '+(log.cienciaSupervisor?'checked':'')+' data-k="cienciaSupervisor" onchange="upLogBool(this.dataset.k,this.checked)" style="width:14px;height:14px"> Ciência do supervisor</label>';
+  html+='<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" '+(log.cienciaProfissional?'checked':'')+' data-k="cienciaProfissional" onchange="upLogBool(this.dataset.k,this.checked)" style="width:14px;height:14px"> Ciência do profissional</label>';
+  html+='</div>';
+  html+='<div class="flex gap8">';
+  html+='<button class="btn btn-sm" onclick="salvarLogSup(false)">Salvar rascunho</button>';
+  html+='<button class="btn btn-green btn-sm" onclick="salvarLogSup(true)">Finalizar registro</button>';
+  html+='<button class="btn btn-xs" onclick="cancelarLogSup()" style="margin-left:auto">Cancelar</button>';
+  html+='</div></div>';
+  return html;
+}
+
+function renderLogCard(log,idx){
+  var dur='';
+  if(log.horaIni&&log.horaFim){
+    var ini=log.horaIni.split(':');var fim=log.horaFim.split(':');
+    var mins=(parseInt(fim[0])*60+parseInt(fim[1]))-(parseInt(ini[0])*60+parseInt(ini[1]));
+    if(mins>0)dur=Math.floor(mins/60)+'h'+(mins%60?String(mins%60).padStart(2,'0')+'min':'');
+  }
+  var tipos=(log.tipos||[]).join(', ');
+  var html='<div class="card mb10" style="border-left:3px solid '+(log.status==="finalizado"?'var(--g)':'var(--a)')+'">';
+  // Header
+  html+='<div class="card-hd" onclick="toggleLogCard('+idx+')" style="cursor:pointer">';
+  html+='<div>';
+  html+='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">';
+  html+='<span style="font-size:13px;font-weight:600;color:var(--ink)">'+log.data+'</span>';
+  if(log.horaIni)html+='<span class="muted" style="font-size:11.5px">'+log.horaIni+(log.horaFim?' – '+log.horaFim:'')+(dur?' ('+dur+')':'')+'</span>';
+  html+='<span class="badge '+(log.status==="finalizado"?'bg-g':'bg-a')+'" style="font-size:9.5px">'+(log.status==="finalizado"?'Finalizado':'Rascunho')+'</span>';
+  html+='</div>';
+  html+='<div class="flex gap8 mt4" style="flex-wrap:wrap">';
+  if(log.supervisor)html+='<span class="muted" style="font-size:11px">Supervisor: '+log.supervisor+'</span>';
+  if(log.profissional)html+='<span class="muted" style="font-size:11px">Profissional: '+log.profissional+'</span>';
+  if(tipos)html+='<span class="muted" style="font-size:11px">'+tipos+'</span>';
+  html+='</div></div>';
+  html+='<div class="flex gap6"><button class="btn btn-xs" onclick="event.stopPropagation();editarLogSup('+idx+')">✎ Editar</button>';
+  html+='<button class="btn btn-xs" style="color:var(--r)" onclick="event.stopPropagation();deletarLogSup('+idx+')">×</button>';
+  html+='<span style="font-size:12px;color:var(--ink3)">'+((S._openLogs||{})[idx]?'▲':'▼')+'</span></div></div>';
+
+  // Expanded detail
+  if((S._openLogs||{})[idx]){
+    html+='<div style="border-top:1px solid var(--b);padding-top:12px;margin-top:6px">';
+    // Checklist summary
+    if(log.ck){
+      html+='<div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Checklist</div>';
+      html+='<div class="g3" style="gap:6px;margin-bottom:12px">';
+      ['pre','during','post'].forEach(function(grp){
+        var lbl={pre:'Pré',during:'Durante',post:'Pós'}[grp];
+        var items=log.ck[grp]||[];var dn=items.filter(function(i){return i.done;}).length;
+        html+='<div style="font-size:11px;color:var(--ink2)"><strong style="color:var(--ink)">'+lbl+'</strong> '+dn+'/'+items.length;
+        if(dn<items.length){
+          var pend=items.filter(function(i){return!i.done;}).map(function(i){return i.t;});
+          html+='<br><span style="color:var(--r);font-size:10.5px">✗ '+pend.join(', ')+'</span>';
+        }
+        html+='</div>';
+      });
+      html+='</div>';
+    }
+    // Classificações
+    var flags=[];
+    if(log.observouSessao)flags.push('Observou sessão');
+    if(log.feedback)flags.push('Feedback dado');
+    if(log.alterouPrograma)flags.push('Programa alterado');
+    if(log.alinhouFamilia)flags.push('Alinhou família');
+    if(log.conjunta)flags.push('Conjunta');
+    if(flags.length)html+='<div class="flex gap4 mb10" style="flex-wrap:wrap">'+flags.map(function(f){return'<span class="badge bg-b" style="font-size:10px">'+f+'</span>';}).join('')+'</div>';
+    // Texto
+    [
+      {k:'contexto',l:'Contexto'},
+      {k:'atividades',l:'Atividades'},
+      {k:'comportamentos',l:'Comportamentos relevantes'},
+      {k:'procedimentos',l:'Procedimentos revisados'},
+      {k:'orientacoes',l:'Orientações'},
+      {k:'ajustes',l:'Ajustes'},
+      {k:'proximosPassos',l:'Próximos passos'},
+      {k:'pendencias',l:'Pendências'},
+    ].forEach(function(f){
+      if(log[f.k]){
+        html+='<div style="margin-bottom:8px"><div style="font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">'+f.l+'</div>';
+        html+='<div style="font-size:12.5px;color:var(--ink2);line-height:1.7">'+log[f.k].replace(/\n/g,'<br>')+'</div></div>';
+      }
+    });
+    if(log.prazo)html+='<div class="muted" style="font-size:11px;margin-top:6px">Prazo: '+log.prazo+'</div>';
+    // Ciência
+    var cia=[];
+    if(log.cienciaSupervisor)cia.push('Supervisor ✓');
+    if(log.cienciaProfissional)cia.push('Profissional ✓');
+    if(cia.length)html+='<div class="muted" style="font-size:11px;margin-top:4px">Ciência: '+cia.join(' · ')+'</div>';
+    html+='</div>';
+  }
+  html+='</div>';
+  return html;
+}
+
+function upLog(k,v){if(S._supLogAtivo)S._supLogAtivo[k]=v;}
+function upLogBool(k,v){if(S._supLogAtivo)S._supLogAtivo[k]=v;}
+function upLogTipo(el){
+  if(!S._supLogAtivo)return;
+  var v=el.dataset.tv;
+  if(!S._supLogAtivo.tipos)S._supLogAtivo.tipos=[];
+  var idx=S._supLogAtivo.tipos.indexOf(v);
+  if(el.checked&&idx<0)S._supLogAtivo.tipos.push(v);
+  else if(!el.checked&&idx>=0)S._supLogAtivo.tipos.splice(idx,1);
+  // Update label background
+  el.closest('label').style.background=el.checked?'var(--bl)':'var(--surf2)';
+  el.closest('label').style.color=el.checked?'#fff':'var(--ink2)';
+}
+function upLogCkEl(el){upLogCk(el.dataset.g,el.dataset.i);}
+function upLogCk(grp,id){
+  if(!S._supLogAtivo)return;
+  var item=S._supLogAtivo.ck[grp].find(function(i){return i.id===id;});
+  if(item){item.done=!item.done;rv();}
+}
+function toggleLogCard(idx){
+  if(!S._openLogs)S._openLogs={};
+  S._openLogs[idx]=!S._openLogs[idx];rv();
+}
+function editarLogSup(idx){
+  var logs=S.supLogs||[];
+  S._supLogAtivo=JSON.parse(JSON.stringify(logs[logs.length-1-idx]));
+  S._supLogEditIdx=logs.length-1-idx;
+  rv();
+  setTimeout(function(){var el=document.getElementById('logForm');if(el)el.scrollIntoView({behavior:'smooth'});},100);
+}
+function deletarLogSup(idx){
+  var logs=S.supLogs||[];var realIdx=logs.length-1-idx;
+  if(!confirm('Excluir este registro de supervisão?'))return;
+  logs.splice(realIdx,1);persist();rv();
+}
+function cancelarLogSup(){
+  S._supLogAtivo=null;S._supLogEditIdx=undefined;rv();
+}
+function salvarLogSup(finalizar){
+  if(!S.supLogs)S.supLogs=[];
+  var log=S._supLogAtivo;if(!log)return;
+  if(finalizar)log.status='finalizado';else log.status='rascunho';
+  if(S._supLogEditIdx!==undefined){
+    S.supLogs[S._supLogEditIdx]=log;
+  } else {
+    S.supLogs.push(log);
+  }
+  S._supLogAtivo=null;S._supLogEditIdx=undefined;
+  persist();rv();
+  toast(finalizar?'Registro finalizado ✓':'Rascunho salvo');
+}
+function exportLogSup(){
+  var logs=S.supLogs||[];if(!logs.length)return;
+  var rows=[['Data','Início','Término','Supervisor','Profissional','Tipo','Modalidade','Contexto','Orientações','Ajustes','Próximos Passos','Pendências','Status']];
+  logs.forEach(function(l){
+    rows.push([l.data,l.horaIni,l.horaFim,l.supervisor,l.profissional,(l.tipos||[]).join(';'),l.modalidade,l.contexto,l.orientacoes,l.ajustes,l.proximosPassos,l.pendencias,l.status]);
+  });
+  var csv=rows.map(function(r){return r.map(function(c){return'"'+(c||'').replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv'}));
+  a.download='log_supervisao_'+cl().code+'.csv';a.click();
+}
+
+// Legacy ckToggle etc kept for compatibility
 function ckToggle(g,id){var it=S.checklist[g].find(function(i){return i.id===id;});if(it){it.done=!it.done;persist();rv();}}
 function ckReset(){Object.keys(S.checklist).forEach(function(g){S.checklist[g].forEach(function(i){i.done=false;});});persist();rv();}
-function ckExport(){var rows=[['Momento','Item','Concluído']];['pre','during','post'].forEach(function(g){var l={pre:'Pré',during:'Durante',post:'Pós'}[g];S.checklist[g].forEach(function(i){rows.push([l,i.t,i.done?'Sim':'']);});});var csv=rows.map(function(r){return r.map(function(c){return'"'+c+'"';}).join(',');}).join('\n');var a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv'}));a.download='checklist.csv';a.click();}
+function ckExport(){exportLogSup();}
+
 
 // ══════════════════════════════════════════════════════
 // VIEW: RELATÓRIO
@@ -1943,7 +2246,27 @@ function driveAuth(cb){
   if(!cid){
     driveAskClientId(cb);return;
   }
-  driveOAuthPopup(cid,cb);
+  // Store what to do after auth
+  try{sessionStorage.setItem('drive_after_auth',cb?cb.name||'sync':'sync');}catch(e){}
+  driveShowAuthLink(cid);
+}
+
+function driveShowAuthLink(cid){
+  var redirect='https://giovanna-js.github.io/agente-aba';
+  var scope='https://www.googleapis.com/auth/drive.readonly';
+  var url='https://accounts.google.com/o/oauth2/v2/auth'
+    +'?client_id='+encodeURIComponent(cid)
+    +'&redirect_uri='+encodeURIComponent(redirect)
+    +'&response_type=token'
+    +'&scope='+encodeURIComponent(scope)
+    +'&prompt=select_account';
+  var container=gi('driveResults')||document.body;
+  container.innerHTML='<div style="padding:16px;font-size:12px;line-height:1.8;color:var(--ink2)">'
+    +'<p style="font-weight:600;color:var(--ink);margin-bottom:8px">Autorizar acesso ao Google Drive</p>'
+    +'<p style="margin-bottom:14px;font-size:11.5px">Clique no link abaixo para autorizar. Você será redirecionado ao Google e, após autorizar, voltará automaticamente ao agente.</p>'
+    +'<a href="'+url+'" class="btn btn-green btn-sm" style="display:inline-block;text-decoration:none">Autorizar com Google →</a>'
+    +'<p style="margin-top:12px;font-size:10.5px;color:var(--ink3)">Após autorizar, clique em ☁ Drive novamente para sincronizar.</p>'
+    +'</div>';
 }
 
 function driveAskClientId(cb){
@@ -1974,21 +2297,6 @@ function saveClientId(){
   driveOAuthPopup(cid,window._driveCb);
 }
 
-function driveOAuthPopup(cid, cb){
-  var redirect='https://giovanna-js.github.io/agente-aba';
-  var scope='https://www.googleapis.com/auth/drive.readonly';
-  var url='https://accounts.google.com/o/oauth2/v2/auth'
-    +'?client_id='+encodeURIComponent(cid)
-    +'&redirect_uri='+encodeURIComponent(redirect)
-    +'&response_type=token'
-    +'&scope='+encodeURIComponent(scope)
-    +'&prompt=select_account';
-  gi('driveResults').innerHTML='<div style="padding:14px;font-size:12px;line-height:1.8;color:var(--ink2)">'
-    +'<p style="margin-bottom:12px;font-weight:500">Autorizar acesso ao Google Drive</p>'
-    +'<p style="margin-bottom:14px;font-size:11.5px">Clique no botão abaixo. Você será redirecionado ao Google e, após autorizar, voltará automaticamente ao agente e a sincronização iniciará.</p>'
-    +'<a class="btn btn-green btn-sm" href="'+url+'">Autorizar com Google Drive →</a>'
-    +'</div>';
-}
 // Check hash on load (if redirect happened in same tab)
 (function(){
   try{
