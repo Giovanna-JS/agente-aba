@@ -1703,36 +1703,134 @@ function copiarPais(){
 // ══════════════════════════════════════════════════════
 // VIEW: NOTAS
 // ══════════════════════════════════════════════════════
+// ── Nota validation ────────────────────────────────────────────────
+function validarNota(reg){
+  if(!reg||reg.trim().length<20) return {ok:false, issues:['Nota sem texto ou muito curta']};
+  var issues=[];
+  var texto=reg.toLowerCase();
+
+  // 1. Nome do profissional — look for proper name pattern (2+ words with caps) or explicit mention
+  var temNome=/\b[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][a-záàâãéêíóôõúç]+ [A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][a-záàâãéêíóôõúç]+/.test(reg);
+  if(!temNome) issues.push('Nome do profissional não identificado');
+
+  // 2. Número de registro (CRP, CRM, CREFONO, CRMV, CRO, CFP, CREFITO etc)
+  var temRegistro=/\b(crp|crm|crefono|crefito|cfp|cro|crmv|cref)\s*[:\-]?\s*\d/i.test(reg)
+    || /\b\d{4,6}[\/\-]\d{1,2}\b/.test(reg); // format 12345/SP
+  if(!temRegistro) issues.push('Número de registro profissional não encontrado (CRP, CRM, CREFONO...)');
+
+  // 3. Objetivos trabalhados
+  var temObjetivo=/(objetivo|programa|trabalhado|habilidade|meta|alvo|treino|intervenção|procedimento)/i.test(reg);
+  if(!temObjetivo) issues.push('Objetivos trabalhados não mencionados');
+
+  // 4. Descrição das atividades
+  var temDescricao=/(realizou|executou|foi apresentad|demonstrou|emitiu|respondeu|participou|observad|sessão|atividade|procedimento|tentativa|reforço|prompt|instrução|discriminação)/i.test(reg);
+  if(!temDescricao) issues.push('Descrição das atividades não identificada');
+
+  // 5. Resultados
+  var temResultado=/(resultado|desempenho|acerto|erro|porcentagem|pct|%|resposta|independente|com ajuda|critério|progresso|manteve|evoluiu|dificuldade|não atingiu)/i.test(reg);
+  if(!temResultado) issues.push('Resultados não registrados');
+
+  // 6. Linguagem subjetiva / julgamentos (warnings, not errors)
+  var subjetivos=['parece','acho que','parece que','bonito','lindo','fofo','adorável','muito bem','ótimo','excelente comportamento','se saiu bem','está evoluindo muito','comportou-se bem','ficou feliz','gostou','adorou'];
+  var temSubjetivo=subjetivos.some(function(s){return texto.includes(s);});
+  if(temSubjetivo) issues.push('⚠ Linguagem subjetiva detectada — prefira termos técnicos e comportamentais');
+
+  return {ok:issues.length===0, issues:issues};
+}
+
+function notaStatus(n){
+  if(!n.reg&&n.presTag==='falta') return 'falta';
+  if(!n.reg&&n.presTag==='cancelado') return 'cancelado';
+  if(!n.reg) return 'sem_texto';
+  var v=validarNota(n.reg);
+  if(!v.ok){
+    var soCriticos=v.issues.filter(function(i){return i.indexOf('⚠')!==0;});
+    if(soCriticos.length>0) return 'incompleta';
+    return 'aviso'; // só warnings subjetivos
+  }
+  return 'ok';
+}
+
 function vNotas(){
   var notas=cnotas().filter(function(n){return n.d;});
-  var fSrv=S._notaSrv||'',fPres=S._notaPres||'';
+  var fSrv=S._notaSrv||'', fPres=S._notaPres||'', fVal=S._notaVal||'';
   var filtered=notas.filter(function(n){
     if(fSrv&&!(n.srv||'').toUpperCase().includes(fSrv.toUpperCase()))return false;
     if(fPres&&n.presTag!==fPres)return false;
+    if(fVal==='ok'&&notaStatus(n)!=='ok')return false;
+    if(fVal==='incompleta'&&!['incompleta','sem_texto','aviso'].includes(notaStatus(n)))return false;
+    if(fVal==='sem_texto'&&notaStatus(n)!=='sem_texto')return false;
     return true;
   });
   var srvs=[...new Set(notas.map(function(n){return n.srv||'';}))].filter(Boolean).sort();
-  return'<div style="max-width:860px">'
-    +'<div class="sec-title">Notas de Sessão - '+cl().code+'</div>'
-    +'<div class="fbar mb12">'
-    +srvs.map(function(s){return'<button class="btn btn-xs '+(fSrv===s?'btn-dark':'')+'" onclick="S._notaSrv=\''+(fSrv===s?'':s)+'\';rv()">'+s+'</button>';}).join('')
-    +'<div style="width:1px;height:14px;background:var(--b);margin:0 3px"></div>'
-    +'<button class="btn btn-xs '+(fPres===''?'btn-dark':'')+'" onclick="S._notaPres=\'\';rv()">Todos</button>'
-    +'<button class="btn btn-xs" style="'+(fPres==='presenca'?'background:var(--g2);color:var(--g);border-color:var(--g3)':'')+'" onclick="S._notaPres=\'presenca\';rv()">✓ Presença</button>'
-    +'<button class="btn btn-xs" style="'+(fPres==='falta'?'background:var(--r2);color:var(--r);border-color:var(--r3)':'')+'" onclick="S._notaPres=\'falta\';rv()">✗ Falta</button>'
-    +'<button class="btn btn-xs" style="'+(fPres==='cancelado'?'background:var(--a2);color:var(--a);border-color:var(--a3)':'')+'" onclick="S._notaPres=\'cancelado\';rv()">- Cancelado</button>'
-    +'<span class="muted" style="margin-left:auto">'+filtered.length+' registros</span>'
-    +'</div>'
-    +filtered.slice().reverse().map(function(n){
-      var presHtml='';
-      if(n.presTag==='falta')presHtml='<span class="badge bg-r" style="font-size:9px">✗ Falta</span>';
-      else if(n.presTag==='cancelado')presHtml='<span class="badge bg-a" style="font-size:9px">- Cancelado</span>';
-      return'<div class="nota"><div class="nota-hd"><span class="nota-srv '+srvClass(n.srv)+'">'+n.srv+'</span><span class="nota-date">'+n.d+'</span>'+(n.ent?'<span class="nota-time">'+n.ent+(n.sai?' – '+n.sai:'')+'</span>':'')+(presHtml||'')+'</div>'
-        +(n.reg?'<div class="nota-txt">'+n.reg+'</div>'
-         :n.presTag==='falta'?'<div class="nota-absent">Sessão não realizada - falta</div>'
-         :n.presTag==='cancelado'?'<div class="nota-absent">Sessão cancelada</div>'
-         :'<div class="nota-absent">Sem registro de sessão</div>')+'</div>';
-    }).join('')+'</div>';
+
+  // Summary counts
+  var nOk=notas.filter(function(n){return notaStatus(n)==='ok';}).length;
+  var nInc=notas.filter(function(n){return['incompleta','sem_texto'].includes(notaStatus(n));}).length;
+  var nAviso=notas.filter(function(n){return notaStatus(n)==='aviso';}).length;
+
+  var html='<div style="max-width:860px">';
+  html+='<div class="sec-title">Notas de Sessão — '+cl().code+'</div>';
+
+  // Status summary bar
+  if(notas.length){
+    html+='<div class="flex gap8 mb12 aic" style="flex-wrap:wrap;padding:10px 12px;background:var(--surf2);border-radius:var(--rad);border:1px solid var(--b)">';
+    html+='<span style="font-size:11px;font-weight:600;color:var(--ink)">Qualidade das notas:</span>';
+    html+='<span class="badge bg-g" style="font-size:10px;cursor:pointer" data-nv="ok" onclick="toggleNotaVal(this.dataset.nv)">✓ Completas: '+nOk+'</span>';
+    html+='<span class="badge bg-r" style="font-size:10px;cursor:pointer" data-nv="incompleta" onclick="toggleNotaVal(this.dataset.nv)">✗ Incompletas/sem texto: '+nInc+'</span>';
+    if(nAviso)html+='<span class="badge bg-a" style="font-size:10px;cursor:pointer" data-nv="aviso" onclick="toggleNotaVal(this.dataset.nv)">⚠ Com avisos: '+nAviso+'</span>';
+    if(fVal)html+='<button class="btn btn-xs" style="margin-left:auto" onclick="clearNotaVal()">× Limpar filtro</button>';
+    html+='</div>';
+  }
+
+  // Filter bar
+  html+='<div class="fbar mb12">';
+  html+=srvs.map(function(s){
+    return'<button class="btn btn-xs '+(fSrv===s?'btn-dark':'')+'" data-srv="'+s+'" onclick="notaSrvFilt(this.dataset.srv)">'+s+'</button>';
+  }).join('');
+  html+='<div style="width:1px;height:14px;background:var(--b);margin:0 3px"></div>';
+  ['','presenca','falta','cancelado'].forEach(function(v){
+    var lbl={'':"Todos",presenca:"✓ Presença",falta:"✗ Falta",cancelado:"- Cancelado"}[v];
+    var style=v==='presenca'?'background:var(--g2);color:var(--g);border-color:var(--g3)':
+               v==='falta'?'background:var(--r2);color:var(--r);border-color:var(--r3)':
+               v==='cancelado'?'background:var(--a2);color:var(--a);border-color:var(--a3)':'';
+    var active=fPres===v;
+    html+='<button class="btn btn-xs'+(active?' btn-dark':'')+'" style="'+(active?'':style)+'" data-pv="'+v+'" onclick="notaPresFilt(this.dataset.pv)">'+lbl+'</button>';
+  });
+  html+='<span class="muted" style="margin-left:auto">'+filtered.length+' registros</span>';
+  html+='</div>';
+  html+=filtered.slice().reverse().map(function(n){
+    var status=notaStatus(n);
+    var val=n.reg?validarNota(n.reg):{ok:false,issues:[]};
+    var bc=status==='ok'?'var(--g)':status==='aviso'?'var(--a)':(status==='incompleta'||status==='sem_texto')?'var(--r)':'var(--b)';
+    var presHtml='';
+    if(n.presTag==='falta')presHtml='<span class="badge bg-r" style="font-size:9px">✗ Falta</span>';
+    else if(n.presTag==='cancelado')presHtml='<span class="badge bg-a" style="font-size:9px">- Cancelado</span>';
+    var sb='';
+    if(status==='ok')sb='<span class="badge bg-g" style="font-size:9px">✓ Completa</span>';
+    else if(status==='aviso')sb='<span class="badge bg-a" style="font-size:9px">⚠ Revisar linguagem</span>';
+    else if(status==='incompleta')sb='<span class="badge bg-r" style="font-size:9px">✗ Incompleta</span>';
+    else if(status==='sem_texto')sb='<span class="badge bg-r" style="font-size:9px">✗ Sem texto</span>';
+    var il='';
+    if(val.issues&&val.issues.length){
+      var bg=status==='aviso'?'var(--a2)':'var(--r2)';var bd=status==='aviso'?'var(--a)':'var(--r)';
+      il='<div style="margin-top:7px;padding:7px 10px;background:'+bg+';border-radius:var(--rad);border-left:3px solid '+bd+'">'
+        +'<div style="font-size:10px;font-weight:600;color:'+bd+';margin-bottom:4px">'+(status==='aviso'?'Avisos:':'Itens faltantes:')+'</div>'
+        +val.issues.map(function(i){return'<div style="font-size:10.5px;color:var(--ink2)">• '+i+'</div>';}).join('')+'</div>';
+    }
+    return'<div class="nota" style="border-left:3px solid '+bc+'">'
+      +'<div class="nota-hd"><span class="nota-srv '+srvClass(n.srv)+'">'+n.srv+'</span>'
+      +'<span class="nota-date">'+n.d+'</span>'+presHtml+sb
+      +(n.ent?'<span class="muted" style="font-size:10px">'+n.ent+'</span>':'')+'</div>'
+      +(n.reg?'<div class="nota-txt">'+n.reg+'</div>'+il
+        :n.presTag==='falta'?'<div class="nota-absent">Sessão não realizada — falta</div>'
+        :n.presTag==='cancelado'?'<div class="nota-absent">Sessão cancelada</div>'
+        :'<div class="nota-absent" style="color:var(--r)">⚠ Sem registro de sessão</div>')
+      +'</div>';
+  }).join('');
+  if(!filtered.length)html+='<div class="muted" style="text-align:center;padding:32px;font-size:12px">Nenhuma nota encontrada.</div>';
+  html+='</div>';
+  return html;
 }
 
 // ══════════════════════════════════════════════════════
@@ -1744,10 +1842,10 @@ function vIOA(){
   var progOpts='<option value="">-</option>'+grupos.map(function(g){return'<option>'+g.programa+'</option>';}).join('');
   return'<div style="max-width:880px"><div class="sec-title">IOA e Integridade de Tratamento</div>'
     +'<div class="g2">'
-    // IOA panel
     +'<div>'
-    +'<div class="card mb12"><div class="card-hd"><div><div class="card-title">Acordo entre Observadores (IOA)</div><div class="card-sub">Cooper, Heron & Heward (2019) - mínimo 20% das sessões</div></div><button class="btn btn-xs btn-green" onclick="gi(\'ioaForm\').style.display=\'block\'">+ Registro</button></div>'
-    +'<div class="muted mb12">Métodos: contagem total (menor/maior×100) ou tentativa a tentativa.</div>'
+    +'<div class="card mb12"><div class="card-hd"><div><div class="card-title">Acordo entre Observadores (IOA)</div><div class="card-sub">Confiabilidade dos dados</div></div></div>'
+
+'<div class="muted mb12">Métodos: contagem total (menor/maior×100) ou tentativa a tentativa.</div>'
     +ioaRecs.map(function(r){var cls=r.pct>=80?'score-ok':r.pct>=60?'score-warn':'score-bad';return'<div style="border:1px solid var(--b);border-radius:var(--rad);padding:10px;margin-bottom:7px"><div class="flex jb aic mb8"><div><strong style="font-size:12px">'+r.programa+'</strong>'+(r.alvo?' → '+r.alvo:'')+'<div class="muted">'+r.data+' · '+r.metodo+' · '+r.obs1+' × '+r.obs2+'</div></div><div class="flex aic gap8"><div class="ioa-score '+cls+'">'+r.pct+'%</div><button class="btn btn-xs" onclick="S.ioa=S.ioa.filter(function(x){return x.id!=='+r.id+'});persist();rv()">×</button></div></div>'+(r.trials?'<div class="trial-grid">'+r.trials.map(function(t){return'<div class="trial-cell '+(t[0]===t[1]?'tc-agree':'tc-disagree')+'" title="Obs1:'+t[0]+' Obs2:'+t[1]+'">'+t[0]+'</div>';}).join('')+'</div>':'')+'</div>';}).join('')
     +(ioaRecs.length===0?'<p class="muted" style="text-align:center;padding:16px;font-size:11px">Nenhum registro. Clique em + Registro.</p>':'')
     +'</div>'
@@ -2579,3 +2677,7 @@ document.addEventListener('DOMContentLoaded',function(){
 </script>
 </body>
 </html>
+function clearNotaVal(){S._notaVal='';rv();}
+function toggleNotaVal(v){S._notaVal=S._notaVal===v?'':v;rv();}
+function notaSrvFilt(s){S._notaSrv=S._notaSrv===s?'':s;rv();}
+function notaPresFilt(v){S._notaPres=v;rv();}
