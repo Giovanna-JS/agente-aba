@@ -919,7 +919,9 @@ function vPainel(){
 
     // Program cards ordered by urgency
 
-    +'<div class="sec-title">Programas</div>'
+    +'<div class="flex aic jb mb4"><span class="sec-title" style="margin-bottom:0">Programas</span>'
+    +(ps.length?'<button class="btn btn-sm" onclick="downloadAnalises()" style="flex-shrink:0">↓ Análises .doc</button>':'')
+    +'</div>'
 
     +gruposFilt.map(function(g){return renderProgGroup(g);}).join('')
     ;
@@ -2674,10 +2676,131 @@ document.addEventListener('DOMContentLoaded',function(){
   // Draw charts after render (delayed for DOM)
   setInterval(drawCharts,600);
 });
-</script>
-</body>
-</html>
+
+// ── Nota filter helpers ─────────────────────────────
 function clearNotaVal(){S._notaVal='';rv();}
 function toggleNotaVal(v){S._notaVal=S._notaVal===v?'':v;rv();}
 function notaSrvFilt(s){S._notaSrv=S._notaSrv===s?'':s;rv();}
 function notaPresFilt(v){S._notaPres=v;rv();}
+
+// ── Exportar análises e decisões (DOCX via HTML) ────
+function downloadAnalises(){
+  var c=cl(),ps=cprogs(),grupos=groupByProg(ps);
+  var hoje=new Date().toLocaleDateString('pt-BR');
+  var rows=[];
+
+  // Header
+  rows.push('<h1 style="font-family:Arial;font-size:16pt;color:#1a1a2e">Análise de Dados e Tomada de Decisão</h1>');
+  rows.push('<p style="font-family:Arial;font-size:10pt;color:#666">Cliente: <b>'+c.code+'</b> &nbsp;|&nbsp; Data: '+hoje+'</p>');
+  rows.push('<hr>');
+
+  grupos.forEach(function(g){
+    var aggVals=progAggVals(g.alvos);
+    var aggSess=aggVals.map(function(v){return{v:v,et:currentPhase(g.alvos[0].sess)};});
+    var aggDec=autoDecide(aggSess,g.alvos[0].crit||90);
+    var T=aggDec?TERMS[aggDec]:null;
+
+    rows.push('<h2 style="font-family:Arial;font-size:13pt;color:#174A82;margin-top:20pt;border-bottom:1pt solid #174A82;padding-bottom:4pt">'+g.programa+'</h2>');
+
+    g.alvos.forEach(function(a){
+      var vals=a.sess.map(function(s){return s.v;});
+      var ph=currentPhase(a.sess);
+      var curSess=sessInCurrentPhase(a.sess);
+      var curVals=curSess.map(function(s){return s.v;});
+      var dec=autoDecide(a.sess,a.crit||90);
+      var Td=dec?TERMS[dec]:null;
+      var t=trendInfo(curVals);
+      var lv=vals.length?vals[vals.length-1]:0;
+      var q=progQualidade(g.programa);
+
+      rows.push('<h3 style="font-family:Arial;font-size:11pt;color:#333;margin-top:12pt">→ '+(a.alvo||'(sem alvo)')+' &nbsp;<span style="font-size:9pt;color:#888">['+a.tipo+' · Fase: '+ph+']</span></h3>');
+
+      // Stats table
+      rows.push('<table style="font-family:Arial;font-size:9pt;border-collapse:collapse;width:100%;margin-bottom:8pt">');
+      rows.push('<tr style="background:#f0f4fa"><th style="padding:4pt 8pt;text-align:left;border:0.5pt solid #ccc">Último valor</th><th style="padding:4pt 8pt;text-align:left;border:0.5pt solid #ccc">Critério</th><th style="padding:4pt 8pt;text-align:left;border:0.5pt solid #ccc">Sessões fase</th><th style="padding:4pt 8pt;text-align:left;border:0.5pt solid #ccc">Tendência</th><th style="padding:4pt 8pt;text-align:left;border:0.5pt solid #ccc">Status</th></tr>');
+      rows.push('<tr><td style="padding:4pt 8pt;border:0.5pt solid #ccc">'+lv+(a.tipo==='Taxa'?'r/m':'%')+'</td>'
+        +'<td style="padding:4pt 8pt;border:0.5pt solid #ccc">'+(a.crit||90)+'%</td>'
+        +'<td style="padding:4pt 8pt;border:0.5pt solid #ccc">'+curSess.length+'</td>'
+        +'<td style="padding:4pt 8pt;border:0.5pt solid #ccc">'+t.lbl+'</td>'
+        +'<td style="padding:4pt 8pt;border:0.5pt solid #ccc">'+(a.status||'em_andamento').replace('_',' ')+'</td></tr>');
+      rows.push('</table>');
+
+      // IOA/Integridade
+      if(q.ioa.length||q.integ.length){
+        rows.push('<p style="font-family:Arial;font-size:9pt;color:#555;margin:4pt 0">');
+        if(q.ioa.length)rows.push('<b>IOA:</b> '+q.ioa.map(function(r){return r.pct+'% ('+r.metodo+' · '+r.data+')';}).join(', ')+'&nbsp;&nbsp;');
+        if(q.integ.length)rows.push('<b>Integridade:</b> '+q.integ.map(function(r){return r.pct+'% ('+r.aplicador+' · '+r.data+')';}).join(', '));
+        rows.push('</p>');
+      }
+
+      // Decisão
+      if(Td){
+        var decColor={'CONCLUIDO':'#1a6640','MANTER':'#174A82','MODIFICAR':'#8A4F08','DESCONTINUAR':'#8A1F1F'}[dec]||'#333';
+        rows.push('<p style="font-family:Arial;font-size:10pt;margin:6pt 0"><b>Decisão:</b> <span style="color:'+decColor+'">'+Td.icon+' '+Td.label+'</span></p>');
+        if(Td.desc)rows.push('<p style="font-family:Arial;font-size:9pt;color:#555;margin:3pt 0;font-style:italic">'+Td.desc+'</p>');
+      }
+
+      // Justificativa / notas salvas
+      if(a.notes){
+        rows.push('<p style="font-family:Arial;font-size:9pt;margin:4pt 0"><b>Justificativa/Notas:</b> '+a.notes+'</p>');
+      }
+
+      // IOA blocker warning
+      if(q.blocker){
+        rows.push('<p style="font-family:Arial;font-size:9pt;color:#c00;margin:4pt 0">⚠ DECISÃO SUSPENSA: qualidade dos dados insuficiente (IOA/Integridade abaixo de 60%).</p>');
+      }
+
+      rows.push('<hr style="border:none;border-top:0.5pt solid #ddd;margin:10pt 0">');
+    });
+  });
+
+  // IOA/Integridade global summary
+  var allIoa=cioa(),allInteg=cinteg();
+  if(allIoa.length||allInteg.length){
+    rows.push('<h2 style="font-family:Arial;font-size:13pt;color:#174A82;margin-top:16pt">Qualidade dos Dados — Resumo Geral</h2>');
+    if(allIoa.length){
+      rows.push('<p style="font-family:Arial;font-size:10pt"><b>IOA registrado:</b></p>');
+      rows.push('<ul style="font-family:Arial;font-size:9pt">');
+      allIoa.forEach(function(r){rows.push('<li>'+r.programa+': '+r.pct+'% — '+r.metodo+' ('+r.data+')</li>');});
+      rows.push('</ul>');
+    }
+    if(allInteg.length){
+      rows.push('<p style="font-family:Arial;font-size:10pt"><b>Integridade registrada:</b></p>');
+      rows.push('<ul style="font-family:Arial;font-size:9pt">');
+      allInteg.forEach(function(r){rows.push('<li>'+r.programa+': '+r.pct+'% — '+r.aplicador+' ('+r.data+')</li>');});
+      rows.push('</ul>');
+    }
+  }
+
+  // Open in new window for printing/saving as PDF or Word
+  var content='<html><head><meta charset="UTF-8"><title>Análises '+c.code+'</title>'
+    +'<style>body{font-family:Arial,sans-serif;margin:2cm;max-width:18cm;color:#1a1a1a}'
+    +'h1{font-size:16pt;color:#1a1a2e;border-bottom:2pt solid #1a1a2e;padding-bottom:6pt}'
+    +'h2{font-size:13pt;color:#174A82;margin-top:20pt;border-bottom:1pt solid #174A82;padding-bottom:4pt}'
+    +'h3{font-size:11pt;color:#333;margin-top:12pt}'
+    +'table{border-collapse:collapse;width:100%;font-size:9pt;margin-bottom:8pt}'
+    +'th{background:#f0f4fa;padding:4pt 8pt;text-align:left;border:0.5pt solid #ccc}'
+    +'td{padding:4pt 8pt;border:0.5pt solid #ccc}'
+    +'@media print{@page{margin:2cm}button{display:none}}'
+    +'</style></head><body>'
+    +'<button onclick="window.print()" style="position:fixed;top:12px;right:12px;padding:8px 16px;background:#174A82;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">🖨 Imprimir / Salvar PDF</button>'
+    +rows.join('')
+    +'</body></html>';
+  var w=window.open('','_blank','width=900,height=700,scrollbars=yes');
+  if(w){
+    w.document.write(content);
+    w.document.close();
+    toast('↓ Documento aberto em nova janela — use Imprimir para salvar como PDF');
+  } else {
+    // Fallback: data URI
+    var uri='data:text/html;charset=utf-8,'+encodeURIComponent(content);
+    var a=document.createElement('a');
+    a.href=uri;
+    a.target='_blank';
+    a.click();
+    toast('Documento gerado — verifique uma nova aba');
+  }
+}
+</script>
+</body>
+</html>
